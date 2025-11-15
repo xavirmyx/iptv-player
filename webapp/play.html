@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IPTV Player</title>
+    <title>IPTV Player Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         * {
@@ -23,10 +23,12 @@
         }
 
         #header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 15px;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 10;
         }
 
         #header h1 {
@@ -36,6 +38,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         #videoContainer {
@@ -45,12 +48,14 @@
             justify-content: center;
             background: #000;
             position: relative;
+            overflow: hidden;
         }
 
         #video {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            background: #000;
         }
 
         #loading {
@@ -59,21 +64,28 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
+            z-index: 5;
         }
 
         .spinner {
-            border: 4px solid rgba(255,255,255,0.1);
-            border-top: 4px solid #fff;
+            border: 5px solid rgba(255,255,255,0.1);
+            border-top: 5px solid #667eea;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 20px;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        #loading p {
+            font-size: 16px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         #error {
@@ -83,54 +95,132 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            padding: 30px;
-            background: rgba(255,0,0,0.1);
-            border: 2px solid #ff4444;
-            border-radius: 10px;
+            padding: 40px;
+            background: rgba(255,0,0,0.15);
+            border: 3px solid #ff4444;
+            border-radius: 15px;
             max-width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            z-index: 10;
         }
 
         #error h2 {
             color: #ff4444;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        #error p {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        #error button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        #error button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        #error button:active {
+            transform: translateY(0);
         }
 
         #controls {
-            background: rgba(0,0,0,0.8);
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.95) 100%);
             padding: 15px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
         }
 
         button {
-            background: #2a5298;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
+            padding: 12px 18px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            font-weight: 600;
         }
 
         button:hover {
-            background: #1e3c72;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
         }
 
         button:active {
-            transform: scale(0.95);
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(102, 126, 234, 0.3);
         }
 
         #timeDisplay {
-            font-size: 12px;
-            min-width: 100px;
+            font-size: 14px;
+            min-width: 110px;
             text-align: center;
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         #volumeSlider {
             flex: 1;
-            max-width: 100px;
+            max-width: 120px;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            outline: none;
+            cursor: pointer;
+        }
+
+        #volumeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+
+        #volumeSlider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.5);
+        }
+
+        #volumeSlider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+
+        #volumeSlider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.5);
         }
 
         .hidden {
@@ -139,23 +229,69 @@
 
         #stats {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 11px;
-            font-family: monospace;
+            top: 70px;
+            right: 15px;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
             display: none;
+            min-width: 220px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 8;
         }
 
         #stats.show {
             display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #statsContent {
+            line-height: 1.8;
+        }
+
+        #statsContent strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
         }
 
         #fullscreenBtn {
             margin-left: auto;
         }
+
+        #qualityIndicator {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: none;
+            z-index: 8;
+        }
+
+        #qualityIndicator.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .quality-excellent { color: #4CAF50; }
+        .quality-good { color: #FFC107; }
+        .quality-poor { color: #FF5722; }
 
         @media (max-width: 768px) {
             #header h1 {
@@ -163,19 +299,53 @@
             }
 
             button {
-                padding: 8px 12px;
-                font-size: 12px;
+                padding: 10px 14px;
+                font-size: 14px;
             }
 
             #controls {
-                padding: 10px;
+                padding: 12px;
+                gap: 8px;
+            }
+
+            #timeDisplay {
+                font-size: 12px;
+                min-width: 90px;
+            }
+
+            #volumeSlider {
+                max-width: 80px;
+            }
+
+            #stats {
+                top: 60px;
+                right: 10px;
+                font-size: 11px;
+                min-width: 180px;
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #header h1 {
+                font-size: 14px;
+            }
+
+            button {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            #statsBtn span,
+            #fullscreenBtn span {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
     <div id="header">
-        <h1 id="channelTitle">Cargando...</h1>
+        <h1 id="channelTitle">Cargando canal...</h1>
     </div>
 
     <div id="videoContainer">
@@ -192,17 +362,21 @@
             <button onclick="location.reload()">🔄 Reintentar</button>
         </div>
 
+        <div id="qualityIndicator">
+            <span id="qualityText">Detectando calidad...</span>
+        </div>
+
         <div id="stats">
             <div id="statsContent"></div>
         </div>
     </div>
 
     <div id="controls">
-        <button id="playPauseBtn" onclick="togglePlay()">▶️</button>
+        <button id="playPauseBtn" onclick="togglePlay()" title="Reproducir/Pausar">▶️</button>
         <div id="timeDisplay">00:00</div>
-        <input type="range" id="volumeSlider" min="0" max="100" value="80" onchange="setVolume(this.value)">
-        <button id="statsBtn" onclick="toggleStats()">📊</button>
-        <button id="fullscreenBtn" onclick="toggleFullscreen()">⛶</button>
+        <input type="range" id="volumeSlider" min="0" max="100" value="80" onchange="setVolume(this.value)" title="Volumen">
+        <button id="statsBtn" onclick="toggleStats()" title="Estadísticas">📊 <span>Stats</span></button>
+        <button id="fullscreenBtn" onclick="toggleFullscreen()" title="Pantalla completa">⛶ <span>Full</span></button>
     </div>
 
     <script>
@@ -221,16 +395,22 @@
         const timeDisplay = document.getElementById('timeDisplay');
         const stats = document.getElementById('stats');
         const statsContent = document.getElementById('statsContent');
+        const qualityIndicator = document.getElementById('qualityIndicator');
+        const qualityText = document.getElementById('qualityText');
 
         channelTitleElem.textContent = channelTitle;
 
         let hls = null;
         let statsInterval = null;
+        let qualityCheckInterval = null;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
 
         function showError(msg) {
             loading.style.display = 'none';
             error.style.display = 'block';
             errorMessage.textContent = msg;
+            qualityIndicator.classList.remove('show');
         }
 
         function hideError() {
@@ -239,6 +419,23 @@
 
         function hideLoading() {
             loading.style.display = 'none';
+        }
+
+        function updateQualityIndicator(quality) {
+            qualityText.className = '';
+
+            if (quality >= 90) {
+                qualityText.textContent = '🟢 Excelente';
+                qualityText.className = 'quality-excellent';
+            } else if (quality >= 70) {
+                qualityText.textContent = '🟡 Buena';
+                qualityText.className = 'quality-good';
+            } else {
+                qualityText.textContent = '🔴 Regular';
+                qualityText.className = 'quality-poor';
+            }
+
+            qualityIndicator.classList.add('show');
         }
 
         function playStream() {
@@ -253,52 +450,126 @@
                 hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
-                    backBufferLength: 90
+                    backBufferLength: 90,
+                    maxBufferLength: 30,
+                    maxMaxBufferLength: 600,
+                    maxBufferSize: 60 * 1000 * 1000,
+                    maxBufferHole: 0.5,
+                    highBufferWatchdogPeriod: 2,
+                    nudgeOffset: 0.1,
+                    nudgeMaxRetry: 3,
+                    maxFragLookUpTolerance: 0.25,
+                    liveSyncDurationCount: 3,
+                    liveMaxLatencyDurationCount: 10,
+                    liveDurationInfinity: false,
+                    enableSoftwareAES: true,
+                    manifestLoadingTimeOut: 10000,
+                    manifestLoadingMaxRetry: 3,
+                    manifestLoadingRetryDelay: 1000,
+                    manifestLoadingMaxRetryTimeout: 64000,
+                    levelLoadingTimeOut: 10000,
+                    levelLoadingMaxRetry: 4,
+                    levelLoadingRetryDelay: 1000,
+                    levelLoadingMaxRetryTimeout: 64000,
+                    fragLoadingTimeOut: 20000,
+                    fragLoadingMaxRetry: 6,
+                    fragLoadingRetryDelay: 1000,
+                    fragLoadingMaxRetryTimeout: 64000,
+                    startFragPrefetch: true,
+                    testBandwidth: true,
+                    progressive: false,
+                    startLevel: -1,
+                    autoStartLoad: true,
+                    capLevelToPlayerSize: false,
+                    debug: false,
+                    xhrSetup: function(xhr, url) {
+                        if (referrer) {
+                            xhr.setRequestHeader('Referer', referrer);
+                        }
+                        if (userAgent) {
+                            xhr.setRequestHeader('User-Agent', userAgent);
+                        }
+                    }
                 });
 
                 hls.loadSource(streamUrl);
                 hls.attachMedia(video);
 
-                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
                     hideLoading();
+                    console.log('Manifest loaded, found ' + data.levels.length + ' quality levels');
+
                     video.play().catch(e => {
                         console.log('Autoplay prevented:', e);
+                        showError('Toca para reproducir (autoplay bloqueado por el navegador)');
                     });
+
+                    startStatsMonitoring();
+                    startQualityCheck();
+                });
+
+                hls.on(Hls.Events.LEVEL_SWITCHED, function(event, data) {
+                    console.log('Quality level switched to: ' + data.level);
                 });
 
                 hls.on(Hls.Events.ERROR, function(event, data) {
+                    console.error('HLS Error:', data.type, data.details, data);
+
                     if (data.fatal) {
                         switch(data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
-                                showError('Error de red. Verifica tu conexión o la URL del stream.');
-                                hls.startLoad();
+                                console.log('Network error, attempting to recover...');
+
+                                if (retryCount < MAX_RETRIES) {
+                                    retryCount++;
+                                    setTimeout(() => {
+                                        hls.startLoad();
+                                    }, 1000 * retryCount);
+                                } else {
+                                    showError('Error de red persistente. Verifica tu conexión o la URL del stream.');
+                                }
                                 break;
+
                             case Hls.ErrorTypes.MEDIA_ERROR:
-                                showError('Error de reproducción. Intentando recuperar...');
+                                console.log('Media error, attempting to recover...');
                                 hls.recoverMediaError();
                                 break;
+
                             default:
-                                showError('Error fatal: ' + data.type);
+                                showError('Error fatal de reproducción: ' + data.details);
                                 hls.destroy();
                                 break;
                         }
+                    } else {
+                        console.warn('Non-fatal error:', data.details);
                     }
                 });
 
-                startStatsMonitoring();
+                hls.on(Hls.Events.FRAG_LOADED, function(event, data) {
+                    retryCount = 0;
+                });
 
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                 video.src = streamUrl;
-                video.addEventListener('loadedmetadata', hideLoading);
-                video.addEventListener('error', () => {
-                    showError('No se pudo cargar el stream');
+
+                video.addEventListener('loadedmetadata', () => {
+                    hideLoading();
+                    startStatsMonitoring();
+                    startQualityCheck();
+                });
+
+                video.addEventListener('error', (e) => {
+                    console.error('Video error:', e);
+                    showError('No se pudo cargar el stream: ' + (video.error ? video.error.message : 'Error desconocido'));
                 });
 
                 video.play().catch(e => {
                     console.log('Autoplay prevented:', e);
+                    showError('Toca para reproducir (autoplay bloqueado por el navegador)');
                 });
+
             } else {
-                showError('Tu navegador no soporta HLS. Prueba con Chrome o Safari.');
+                showError('Tu navegador no soporta HLS. Prueba con Chrome, Safari o Firefox.');
             }
         }
 
@@ -318,9 +589,25 @@
 
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                } else if (document.documentElement.mozRequestFullScreen) {
+                    document.documentElement.mozRequestFullScreen();
+                } else if (document.documentElement.msRequestFullscreen) {
+                    document.documentElement.msRequestFullscreen();
+                }
             } else {
-                document.exitFullscreen();
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
             }
         }
 
@@ -332,22 +619,99 @@
             if (statsInterval) clearInterval(statsInterval);
 
             statsInterval = setInterval(() => {
-                if (!hls) return;
+                if (!hls && !video.src) return;
 
-                const level = hls.currentLevel;
-                const levelInfo = hls.levels[level];
+                let statsHtml = '<strong>📊 Stream Info</strong><br>';
 
-                let statsHtml = '<strong>Stream Info</strong><br>';
-                statsHtml += `Buffer: ${video.buffered.length > 0 ? video.buffered.end(0).toFixed(1) : 0}s<br>`;
-                statsHtml += `Dropped Frames: ${video.webkitDecodedFrameCount ? video.webkitDroppedFrameCount : 'N/A'}<br>`;
+                if (hls) {
+                    const level = hls.currentLevel;
+                    const levelInfo = hls.levels[level];
 
-                if (levelInfo) {
-                    statsHtml += `Bitrate: ${(levelInfo.bitrate / 1000).toFixed(0)} kbps<br>`;
-                    statsHtml += `Resolution: ${levelInfo.width}x${levelInfo.height}<br>`;
+                    statsHtml += `<strong>🎞️ Calidad Actual:</strong> ${level >= 0 ? level : 'Auto'}<br>`;
+
+                    if (levelInfo) {
+                        statsHtml += `<strong>📏 Resolución:</strong> ${levelInfo.width}x${levelInfo.height}<br>`;
+                        statsHtml += `<strong>📡 Bitrate:</strong> ${(levelInfo.bitrate / 1000).toFixed(0)} kbps<br>`;
+                    }
+
+                    const loadLevel = hls.loadLevel;
+                    statsHtml += `<strong>📥 Load Level:</strong> ${loadLevel >= 0 ? loadLevel : 'Auto'}<br>`;
                 }
+
+                if (video.buffered.length > 0) {
+                    const bufferEnd = video.buffered.end(video.buffered.length - 1);
+                    const bufferAmount = bufferEnd - video.currentTime;
+                    statsHtml += `<strong>💾 Buffer:</strong> ${bufferAmount.toFixed(1)}s<br>`;
+                }
+
+                if (video.webkitDecodedFrameCount) {
+                    const dropped = video.webkitDroppedFrameCount || 0;
+                    const decoded = video.webkitDecodedFrameCount || 1;
+                    const dropRate = ((dropped / decoded) * 100).toFixed(2);
+                    statsHtml += `<strong>🎬 Frames:</strong> ${decoded}<br>`;
+                    statsHtml += `<strong>❌ Dropped:</strong> ${dropped} (${dropRate}%)<br>`;
+                }
+
+                statsHtml += `<strong>⏱️ Duración:</strong> ${formatTime(video.duration)}<br>`;
+                statsHtml += `<strong>🔊 Volumen:</strong> ${Math.round(video.volume * 100)}%<br>`;
 
                 statsContent.innerHTML = statsHtml;
             }, 1000);
+        }
+
+        function startQualityCheck() {
+            if (qualityCheckInterval) clearInterval(qualityCheckInterval);
+
+            qualityCheckInterval = setInterval(() => {
+                let quality = 50;
+
+                if (hls) {
+                    const level = hls.currentLevel;
+                    const levelInfo = hls.levels[level];
+
+                    if (levelInfo) {
+                        const bitrate = levelInfo.bitrate / 1000;
+
+                        if (bitrate >= 3000) quality = 95;
+                        else if (bitrate >= 2000) quality = 85;
+                        else if (bitrate >= 1000) quality = 75;
+                        else if (bitrate >= 500) quality = 65;
+                        else quality = 55;
+
+                        if (video.webkitDroppedFrameCount) {
+                            const dropped = video.webkitDroppedFrameCount || 0;
+                            const decoded = video.webkitDecodedFrameCount || 1;
+                            const dropRate = (dropped / decoded) * 100;
+
+                            if (dropRate > 5) quality -= 20;
+                            else if (dropRate > 2) quality -= 10;
+                        }
+
+                        if (video.buffered.length > 0) {
+                            const bufferEnd = video.buffered.end(video.buffered.length - 1);
+                            const bufferAmount = bufferEnd - video.currentTime;
+
+                            if (bufferAmount < 2) quality -= 15;
+                            else if (bufferAmount < 5) quality -= 5;
+                        }
+                    }
+                }
+
+                quality = Math.max(0, Math.min(100, quality));
+                updateQualityIndicator(quality);
+            }, 3000);
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '00:00';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+
+            if (h > 0) {
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
 
         video.addEventListener('play', () => {
@@ -359,14 +723,27 @@
         });
 
         video.addEventListener('timeupdate', () => {
-            const current = Math.floor(video.currentTime);
-            const minutes = Math.floor(current / 60);
-            const seconds = current % 60;
-            timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            timeDisplay.textContent = formatTime(video.currentTime);
+        });
+
+        video.addEventListener('waiting', () => {
+            console.log('Buffering...');
+        });
+
+        video.addEventListener('playing', () => {
+            console.log('Playing...');
+            hideError();
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                console.log('Entered fullscreen');
+            } else {
+                console.log('Exited fullscreen');
+            }
         });
 
         setVolume(80);
-
         playStream();
 
         window.addEventListener('beforeunload', () => {
@@ -375,6 +752,9 @@
             }
             if (statsInterval) {
                 clearInterval(statsInterval);
+            }
+            if (qualityCheckInterval) {
+                clearInterval(qualityCheckInterval);
             }
         });
     </script>

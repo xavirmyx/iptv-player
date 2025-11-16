@@ -3,35 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>IptvChekProk_bot — Reproductor (Debug mejorado)</title>
+  <title>IptvChekProk_bot — Reproductor (Corrigiendo CORS)</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
-    /* (estilos compactados: usa los tuyos si prefieres) */
     body{margin:12px;background:#05060a;color:#fff;font-family:-apple-system,Segoe UI,Arial}
-    .card{background:rgba(255,255,255,0.02);border-radius:12px;padding:12px}
-    .overlay{background:rgba(0,0,0,0.7);padding:16px;border-radius:8px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));border-radius:12px;padding:12px}
+    .overlay{background:rgba(0,0,0,0.6);padding:12px;border-radius:8px;margin-bottom:8px}
     button{padding:8px 12px;border-radius:8px;border:0;background:#222;color:#fff;cursor:pointer}
+    video{width:100%;max-height:60vh;background:#000;display:block;border-radius:8px;overflow:hidden}
+    .muted{color:#9aa4c7;font-size:13px}
+    pre{white-space:pre-wrap;color:#cbd5e1}
   </style>
 </head>
 <body>
   <div class="card">
-    <h3>IptvChekProk_bot — Reproductor</h3>
-    <div id="ui">
-      <div id="statusBox" class="overlay">
-        <strong id="ovTitle">Iniciando</strong>
-        <div id="ovMsg">Preparando...</div>
-        <div style="margin-top:8px">
-          <button id="retryBtn" style="display:none">Reintentar</button>
-        </div>
-      </div>
+    <h3>IptvChekProk_bot — Reproductor (Debug CORS)</h3>
 
-      <div style="margin-top:12px">
-        <video id="video" controls playsinline style="width:100%;max-height:60vh;background:#000"></video>
-      </div>
-
+    <div id="statusBox" class="overlay">
+      <strong id="ovTitle">Iniciando</strong>
+      <div id="ovMsg" class="muted">Preparando...</div>
       <div style="margin-top:8px">
-        <div id="debug" style="font-size:13px;color:#cbd5e1"></div>
+        <button id="retryBtn" style="display:none">Reintentar</button>
       </div>
+    </div>
+
+    <video id="video" controls playsinline></video>
+
+    <div style="margin-top:8px">
+      <div class="muted">Intentados:</div>
+      <div id="tried" class="muted" style="margin-bottom:6px"></div>
+      <pre id="debug" style="background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;"></pre>
     </div>
   </div>
 
@@ -42,20 +43,21 @@
     const ovMsg = document.getElementById('ovMsg');
     const retryBtn = document.getElementById('retryBtn');
     const debug = document.getElementById('debug');
+    const triedEl = document.getElementById('tried');
 
-    // token y api desde querystring
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
-    // si quieres usar un endpoint diferente: ?api=https://miapi.com/api/stream-info
-    const apiParam = params.get('api');
+    const apiParam = params.get('api'); // si quieres forzar endpoint: ?token=...&api=https://...
+    const useCorsProxy = params.get('use_cors_proxy') === '1'; // opcional: ?use_cors_proxy=1
 
-    // endpoints por defecto (intenta en orden)
+    // Endpoints: orden de prueba
     const endpoints = [];
     if (apiParam) endpoints.push(apiParam);
-    // endpoint absoluto sugerido (tu versión previa)
     endpoints.push('https://iptvpro-check-5nvh.onrender.com/api/stream-info');
-    // endpoint relativo (por si sirve con proxy en mismo dominio)
     endpoints.push('/api/stream-info');
+
+    // proxy público (solo si lo pides). NO habilitado por defecto.
+    const corsProxy = 'https://api.allorigins.win/raw?url='; // funciona para pruebas rápidas
 
     let _hls = null;
     let _streamUrl = null;
@@ -65,63 +67,109 @@
       ovTitle.textContent = title;
       ovMsg.textContent = msg;
       retryBtn.style.display = showRetry ? 'inline-block' : 'none';
-      debug.innerText = `Intentados: ${_tried.join(' | ')}`;
+      triedEl.textContent = _tried.join(' | ') || '—';
+    }
+
+    function appendDebug(line){
+      const now = new Date().toISOString();
+      debug.textContent = now + '  ' + line + '\n' + debug.textContent;
     }
 
     async function tryFetchInfo(){
-      if (!token) {
+      _tried = [];
+      debug.textContent = '';
+      if (!token){
         setStatus('❌ Token faltante', 'Añade ?token=TU_TOKEN a la URL.', false);
+        appendDebug('Token no proporcionado.');
         return;
       }
-      setStatus('Conectando', 'Probando endpoints disponibles...');
+      setStatus('Conectando', 'Probando endpoints...', false);
+
       for (const base of endpoints){
         if (!base) continue;
-        const url = base + (base.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
         _tried.push(base);
-        // intentamos llamar
+        triedEl.textContent = _tried.join(' | ');
+        // construimos URL con token
+        const sep = base.includes('?') ? '&' : '?';
+        const targetUrl = base + sep + 'token=' + encodeURIComponent(token);
+
+        // Si pediste usar proxy, construye la url proxy
+        const finalUrl = (useCorsProxy && !base.startsWith('/') && !base.startsWith(location.origin)) ? (corsProxy + encodeURIComponent(targetUrl)) : targetUrl;
+
+        setStatus('Probando', base, false);
+        appendDebug(`Intentando: ${finalUrl}`);
+
         try {
-          setStatus('Conectando', `Probando: ${base}`);
+          // Important: NO usamos credentials (evita preflight con credenciales) y forzamos CORS.
           const controller = new AbortController();
-          const timeout = setTimeout(()=> controller.abort(), 10000);
-          const res = await fetch(url, { method: 'GET', credentials: 'include', signal: controller.signal });
-          clearTimeout(timeout);
+          const timeoutId = setTimeout(()=> controller.abort(), 12000);
+
+          const res = await fetch(finalUrl, {
+            method: 'GET',
+            mode: 'cors', // pedir CORS
+            // NO credentials para evitar preflights con cookies
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          appendDebug(`HTTP ${res.status} ${res.statusText}`);
+
           if (!res.ok){
-            // leer body (puede ayudar a diagnosticar)
-            let txt = '';
-            try { txt = await res.text(); } catch(e) { txt = '(no body)'; }
-            setStatus('❌ Respuesta del servidor', `HTTP ${res.status} - ${res.statusText}. ${txt}`, true);
-            // si falla, seguimos probando otros endpoints
+            // Intentamos leer texto del body (puede ayudar).
+            let bodyText = '';
+            try { bodyText = await res.text(); } catch(e) { bodyText = '(no se pudo leer body)'; }
+            appendDebug(`Body: ${bodyText.slice(0,800)}`);
+            setStatus('❌ Respuesta no OK', `HTTP ${res.status} - ${res.statusText}`, true);
             continue;
           }
-          const data = await res.json();
-          // basic validation
+
+          // parse JSON (si se usó proxy como allorigins, la respuesta será el texto crudo; allorigins/raw retorna body crudo)
+          let data = null;
+          try {
+            // si usamos allorigins/raw, ya es el body real (no JSON wrapper)
+            data = await res.json();
+          } catch (e) {
+            // no pudo parsear JSON -> mostrar body como texto
+            const body = await res.text();
+            appendDebug('Respuesta no JSON: ' + body.slice(0,1000));
+            setStatus('❌ Respuesta inesperada', 'El servidor devolvió un body no-JSON.', true);
+            continue;
+          }
+
+          // validación mínima
           if (!data || !data.stream_url){
-            setStatus('❌ Respuesta inválida', 'El servidor no devolvió stream_url válido.', true);
+            appendDebug('JSON recibido: ' + JSON.stringify(data).slice(0,1000));
+            setStatus('❌ stream_url no encontrado', 'El JSON no contiene "stream_url".', true);
             continue;
           }
-          // ok: tenemos info (guardamos url de forma privada)
+
+          // OK: tenemos URL (la guardamos en variable privada)
+          _streamUrl = data.stream_url;
+          appendDebug('Stream recibido. Iniciando reproducción (URL oculta).');
           setStatus('Conectado', 'Reproduciendo...', false);
-          _streamUrl = data.stream_url; // NO se muestra
-          // iniciar playback
+
           await startPlayback(_streamUrl, data);
-          // limpiar variable local que contenía la URL (intento de reducir exposición)
-          // OJO: hls.js necesita la URL internamente; aquí borramos la referencia externa
+
+          // limpiar referencia local para minimizar exposición
           _streamUrl = null;
           return;
-        } catch (err) {
-          // si es abort (timeout) o otro error de fetch: mostramos y probamos siguiente
-          const msg = (err.name === 'AbortError') ? 'Timeout (10s) al conectar' : (err.message || String(err));
-          setStatus('❌ Error de conexión', `${base} → ${msg}`, true);
+        } catch (err){
+          const msg = err.name === 'AbortError' ? 'Timeout (12s)' : (err.message || String(err));
+          appendDebug(`Error fetch: ${msg}`);
+          setStatus('❌ Error conexión', `${base} → ${msg}`, true);
+          // continuar con siguiente endpoint
           continue;
         }
       }
-      // si llegamos aquí, ninguno funcionó
-      setStatus('❌ Ningún endpoint respondió', 'Revisa CORS, token y que la API esté en línea. Usa el botón Reintentar.', true);
+
+      // si llegamos aquí, todos fallaron
+      setStatus('❌ Ningún endpoint respondió', 'Revisa CORS, token y API. Prueba ?use_cors_proxy=1 para probar con proxy público (temporal).', true);
+      appendDebug('Fallaron todos los endpoints. Revisa CORS y token en servidor.');
     }
 
     async function startPlayback(streamUrl, meta){
       try {
-        // si es HLS...
         if (streamUrl.includes('.m3u8') && window.Hls && Hls.isSupported()){
           if (_hls) try{ _hls.destroy(); }catch(e){}
           _hls = new Hls({ enableWorker:true, maxBufferLength:30 });
@@ -129,31 +177,37 @@
           _hls.attachMedia(video);
           _hls.on(Hls.Events.MANIFEST_PARSED, function(){
             video.play().catch(()=>{});
+            appendDebug('MANIFEST_PARSED: reproducción iniciada.');
           });
           _hls.on(Hls.Events.ERROR, function(_, data){
-            console.error && console.error('HLS error:', data); // esto no contiene la url normalmente
+            appendDebug('HLS error: ' + (data && data.type) + ' - ' + (data && data.details));
           });
         } else {
           video.src = streamUrl;
-          video.addEventListener('loadeddata', ()=> video.play().catch(()=>{}), { once:true });
-          video.addEventListener('error', ()=> setStatus('❌ Error reproducción', 'El elemento video no pudo reproducir el recurso.', true), { once:true });
+          video.addEventListener('loadeddata', ()=> {
+            video.play().catch(()=>{});
+            appendDebug('loadeddata: reproducción iniciada (no-HLS).');
+          }, { once:true });
+          video.addEventListener('error', ()=> {
+            appendDebug('Error elemento <video> al reproducir.');
+            setStatus('❌ Error reproducción', 'El elemento video no pudo reproducir el recurso.', true);
+          }, { once:true });
         }
-      } catch (e) {
+      } catch (e){
+        appendDebug('Error startPlayback: ' + (e.message || String(e)));
         setStatus('❌ Error interno', e.message || String(e), true);
       }
     }
 
     retryBtn.addEventListener('click', ()=>{
-      _tried = [];
+      try { if (_hls) _hls.destroy(); } catch(e){}
       tryFetchInfo();
     });
 
-    // inicio automático
     window.addEventListener('load', ()=> {
       tryFetchInfo();
     });
 
-    // limpiar referencias si cierra
     window.addEventListener('beforeunload', ()=> {
       try{ if (_hls) _hls.destroy(); }catch(e){}
     });

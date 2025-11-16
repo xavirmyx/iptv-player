@@ -73,25 +73,37 @@
         <button onclick="location.reload()">🔄 Reload</button>
     </div>
     <script>
-        const token = new URLSearchParams(window.location.search).get('token');
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        const backend = params.get('backend') || window.location.origin;
         const video = document.getElementById('video');
         const overlay = document.getElementById('overlay');
         let hls = null;
 
         async function init() {
             if (!token) {
-                overlay.innerHTML = '<div class="info"><h3>❌ Token no proporcionado</h3></div>';
+                overlay.innerHTML = '<div class="info"><h3>❌ Acceso no autorizado</h3></div>';
                 return;
             }
             try {
-                const res = await fetch(`https://iptvpro-check-5nvh.onrender.com/api/stream-info?token=${token}`);
-                if (!res.ok) throw new Error('Token inválido');
-                const data = await res.json();
-                document.getElementById('channelName').textContent = data.channel_name;
-                
-                if (data.stream_url.includes('.m3u8') && Hls.isSupported()) {
-                    hls = new Hls({ enableWorker: true, maxBufferLength: 30 });
-                    hls.loadSource(data.stream_url);
+                const streamUrl = `${backend}/api/stream/${token}`;
+                const infoUrl = `${backend}/api/channel-info/${token}`;
+
+                const infoRes = await fetch(infoUrl);
+                if (!infoRes.ok) throw new Error('Token inválido');
+                const info = await infoRes.json();
+
+                document.getElementById('channelName').textContent = info.channel_name;
+
+                if (info.stream_type === 'hls' && Hls.isSupported()) {
+                    hls = new Hls({
+                        enableWorker: true,
+                        maxBufferLength: 30,
+                        xhrSetup: (xhr) => {
+                            xhr.withCredentials = false;
+                        }
+                    });
+                    hls.loadSource(streamUrl);
                     hls.attachMedia(video);
                     hls.on(Hls.Events.MANIFEST_PARSED, () => {
                         overlay.classList.add('hidden');
@@ -104,14 +116,15 @@
                         }
                     });
                 } else {
-                    video.src = data.stream_url;
+                    video.src = streamUrl;
                     video.addEventListener('loadeddata', () => {
                         overlay.classList.add('hidden');
                         video.play().catch(() => {});
                     });
                 }
             } catch (err) {
-                overlay.innerHTML = `<div class="info"><h3>❌ ${err.message}</h3></div>`;
+                overlay.innerHTML = '<div class="info"><h3>❌ Error de conexión</h3></div>';
+                console.error('Player error:', err);
             }
         }
         window.addEventListener('load', init);

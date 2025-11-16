@@ -1,387 +1,734 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>IPTV Player Ultra Pro — Super</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <style>
-    :root{--accent1:#667eea;--accent2:#764ba2;--bg:linear-gradient(135deg,#0f0c29,#302b63,#24243e);--panel:rgba(0,0,0,0.6);--muted:rgba(255,255,255,0.6)}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:#fff;margin:0;height:100vh;display:flex;flex-direction:column}
-    header{display:flex;align-items:center;padding:12px 18px;gap:12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px)}
-    #brand{display:flex;align-items:center;gap:12px}
-    #brand svg{width:44px;height:44px}
-    #brand .title{font-weight:700;background:linear-gradient(90deg,var(--accent1),var(--accent2));-webkit-background-clip:text;color:transparent}
-    .actions{margin-left:auto;display:flex;gap:10px;align-items:center}
-    .btn{background:linear-gradient(135deg,var(--accent1),var(--accent2));border:none;padding:8px 12px;border-radius:10px;color:#fff;cursor:pointer}
-    .btn.secondary{background:rgba(255,255,255,0.06)}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IPTV Player Ultra Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    main{display:flex;flex:1;gap:12px;padding:12px;box-sizing:border-box}
-    .left{flex:1;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;background:#000}
-    .player-wrap{position:relative;flex:1;background:#000;display:flex;align-items:center;justify-content:center}
-    video{width:100%;height:100%;background:#000;object-fit:contain}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-    .overlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:60;padding:20px;border-radius:12px;background:var(--panel);min-width:260px;text-align:center}
-    .hidden{display:none!important}
+        #header {
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 100;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        }
 
-    .controls{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(0,0,0,0.7)}
-    input[type=range]{flex:1}
-    select{padding:8px;border-radius:8px;background:rgba(255,255,255,0.03);color:inherit;border:none}
+        #header h1 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-    .right{width:360px;display:flex;flex-direction:column;gap:12px}
-    .panel{background:var(--panel);padding:12px;border-radius:10px}
-    .panel h3{margin:0 0 8px 0}
-    .list{max-height:260px;overflow:auto}
-    .row{padding:8px;border-radius:8px;margin-bottom:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);display:flex;justify-content:space-between;align-items:center}
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
 
-    .small{font-size:13px;color:var(--muted)}
-    .muted{color:var(--muted)}
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
 
-    /* hide video url context menu attempt */
-    video::-internal-media-controls-download-button{display:none}
+        .status-live { background: #4ade80; }
+        .status-loading { background: #fbbf24; }
+        .status-error { background: #ef4444; }
 
-    @media(max-width:900px){main{flex-direction:column}.right{width:100%}}
-  </style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        #videoContainer {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .spinner {
+            border: 6px solid rgba(102, 126, 234, 0.1);
+            border-top: 6px solid #667eea;
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #loading p {
+            font-size: 16px;
+            color: #fff;
+            font-weight: 500;
+            margin: 10px 0 0;
+        }
+
+        #loading .loading-sub {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 8px;
+        }
+
+        #error {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 40px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            border-radius: 20px;
+            max-width: 90%;
+            z-index: 50;
+            box-shadow: 0 10px 40px rgba(239, 68, 68, 0.3);
+        }
+
+        #error h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #ef4444;
+        }
+
+        #error p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+
+        #error .error-code {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #fbbf24;
+            word-break: break-all;
+        }
+
+        #statsOverlay {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 12px;
+            z-index: 60;
+            min-width: 250px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        #statsOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .quality-excellent { color: #4ade80; }
+        .quality-good { color: #fbbf24; }
+        .quality-poor { color: #ef4444; }
+
+        #controls {
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+            border-top: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            white-space: nowrap;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-btn.secondary {
+            background: rgba(102, 126, 234, 0.2);
+            box-shadow: none;
+        }
+
+        .control-btn.secondary:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        #volumeControl {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        #volumeSlider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        #volumeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+        }
+
+        #volumeSlider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .time-display {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            min-width: 100px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            #header h1 {
+                font-size: 14px;
+            }
+
+            #statsOverlay {
+                bottom: 80px;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+                padding: 15px;
+            }
+
+            #controls {
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 12px 15px;
+            }
+
+            .control-btn {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+
+            #volumeControl {
+                order: 3;
+                flex-basis: 100%;
+                max-width: none;
+            }
+        }
+
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <div id="brand">
-      <!-- Inline SVG logo that references @IptvChekProk_bot visually (no external URL) -->
-      <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
-        <defs>
-          <linearGradient id="g" x1="0" x2="1">
-            <stop offset="0" stop-color="#667eea"/>
-            <stop offset="1" stop-color="#764ba2"/>
-          </linearGradient>
-        </defs>
-        <rect width="120" height="120" rx="20" fill="url(#g)"/>
-        <g transform="translate(12,24)" fill="#fff">
-          <path d="M18 10h6v40h-6zM36 10h6v40h-6z" opacity="0.95"></path>
-          <circle cx="54" cy="30" r="14" opacity="0.95"></circle>
-        </g>
-        <text x="60" y="105" font-size="10" text-anchor="middle" fill="#fff">@IptvChekProk_bot</text>
-      </svg>
-      <div>
-        <div class="title" id="channelTitle">IPTV Player Ultra Pro</div>
-        <div class="small" id="subTitle">Reproductor avanzado — @IptvChekProk_bot</div>
-      </div>
+    <div id="header">
+        <h1 id="channelTitle">Cargando...</h1>
+        <div class="status-badge">
+            <div class="status-indicator status-loading" id="statusIndicator"></div>
+            <span id="statusText">Conectando</span>
+        </div>
     </div>
 
-    <div class="actions">
-      <button id="themeBtn" class="btn secondary" title="Tema">Tema</button>
-      <button id="shareBtn" class="btn secondary">Compartir</button>
-      <button id="pipBtn" class="btn secondary">PiP</button>
+    <div id="videoContainer">
+        <video id="video" playsinline webkit-playsinline controls></video>
+
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>Iniciando Reproductor</p>
+            <p class="loading-sub">Sistema de streaming seguro</p>
+        </div>
+
+        <div id="error">
+            <h2>⚠️ Error de Reproducción</h2>
+            <p id="errorMessage">No se pudo cargar el stream</p>
+            <div class="error-code" id="errorCode"></div>
+        </div>
+
+        <div id="statsOverlay" class="hidden">
+            <div class="stat-row">
+                <span class="stat-label">📊 Calidad</span>
+                <span class="stat-value" id="qualityText">Analizando...</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">🎬 Resolución</span>
+                <span class="stat-value" id="resolutionText">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">⚡ Bitrate</span>
+                <span class="stat-value" id="bitrateText">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">📡 Buffer</span>
+                <span class="stat-value" id="bufferText">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">🔄 FPS</span>
+                <span class="stat-value" id="fpsText">-</span>
+            </div>
+        </div>
     </div>
-  </header>
 
-  <main>
-    <div class="left">
-      <div class="player-wrap">
-        <video id="video" playsinline webkit-playsinline controls crossorigin="anonymous" preload="metadata" muted></video>
-
-        <div id="loading" class="overlay">
-          <div style="margin-bottom:8px;">🔄</div>
-          <div id="loadingText">Iniciando reproductor...</div>
+    <div id="controls">
+        <button class="control-btn" id="playPauseBtn" onclick="togglePlay()">▶️ Play</button>
+        <button class="control-btn secondary" id="muteBtn" onclick="toggleMute()">🔊</button>
+        <div id="volumeControl">
+            <input type="range" id="volumeSlider" min="0" max="100" value="80">
         </div>
-
-        <div id="errorBox" class="overlay hidden">
-          <div>⚠️ <strong id="errorTitle">Error de reproducción</strong></div>
-          <div class="small" id="errorDetail"></div>
-          <div style="margin-top:8px"><button id="retryBtn" class="btn">Reintentar</button></div>
-        </div>
-      </div>
-
-      <div class="controls">
-        <button id="playBtn" class="btn">▶️ Play</button>
-        <button id="muteBtn" class="btn secondary">🔊</button>
-        <input id="volume" type="range" min="0" max="100" value="80">
-        <select id="qualitySelect"><option value="auto">Calidad: Auto</option></select>
-        <div style="width:110px;text-align:center;color:var(--muted)" id="timeDisplay">LIVE</div>
-      </div>
+        <button class="control-btn secondary" id="statsBtn" onclick="toggleStats()">📊</button>
+        <button class="control-btn secondary" id="fullscreenBtn" onclick="toggleFullscreen()">⛶</button>
+        <div class="time-display" id="timeDisplay">LIVE</div>
     </div>
 
-    <aside class="right">
-      <div class="panel">
-        <h3>Canales</h3>
-        <div class="small muted">Elige un canal. Las URLs no se muestran públicamente.</div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <input id="channelFilter" placeholder="Buscar canal" class="small" style="flex:1;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-          <button id="refreshChannels" class="btn secondary">Actualizar</button>
-        </div>
-        <div id="channelsList" class="list" style="margin-top:8px">Cargando...</div>
-      </div>
+    <div class="toast" id="toast"></div>
 
-      <div class="panel">
-        <h3>Información</h3>
-        <div class="row"><div>Canal</div><div id="infoChannel" class="muted">-</div></div>
-        <div class="row"><div>Resolución</div><div id="infoRes" class="muted">-</div></div>
-        <div class="row"><div>Bitrate</div><div id="infoBitrate" class="muted">-</div></div>
-        <div class="row"><div>Buffer</div><div id="infoBuffer" class="muted">-</div></div>
-        <div class="row"><div>FPS</div><div id="infoFps" class="muted">-</div></div>
-      </div>
+    <script>
+        // Configuración del servidor backend
+        const BACKEND_URL = 'https://iptvpro-check-5nvh.onrender.com';
 
-      <div class="panel">
-        <h3>Control remoto</h3>
-        <div class="small muted">Conecta el bot para enviar comandos (play/pause/cambiar canal).</div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button id="connectWs" class="btn secondary">Conectar WS</button>
-          <button id="sendStatus" class="btn">Enviar status</button>
-        </div>
-        <div id="wsLog" class="list" style="margin-top:8px"></div>
-      </div>
+        const video = document.getElementById('video');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const statsOverlay = document.getElementById('statsOverlay');
+        const channelTitle = document.getElementById('channelTitle');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const timeDisplay = document.getElementById('timeDisplay');
 
-    </aside>
-  </main>
+        let hls = null;
+        let statsInterval = null;
+        let qualityScore = 0;
 
-  <script>
-    // ========== Config ===========
-    const BACKEND_URL = 'https://iptvpro-check-5nvh.onrender.com';
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
 
-    // UI refs
-    const video = document.getElementById('video');
-    const loading = document.getElementById('loading');
-    const loadingText = document.getElementById('loadingText');
-    const errorBox = document.getElementById('errorBox');
-    const errorTitle = document.getElementById('errorTitle');
-    const errorDetail = document.getElementById('errorDetail');
-    const retryBtn = document.getElementById('retryBtn');
-    const playBtn = document.getElementById('playBtn');
-    const muteBtn = document.getElementById('muteBtn');
-    const volume = document.getElementById('volume');
-    const qualitySelect = document.getElementById('qualitySelect');
-    const timeDisplay = document.getElementById('timeDisplay');
-    const channelsList = document.getElementById('channelsList');
-    const channelFilter = document.getElementById('channelFilter');
-    const refreshChannels = document.getElementById('refreshChannels');
-    const infoChannel = document.getElementById('infoChannel');
-    const infoRes = document.getElementById('infoRes');
-    const infoBitrate = document.getElementById('infoBitrate');
-    const infoBuffer = document.getElementById('infoBuffer');
-    const infoFps = document.getElementById('infoFps');
-    const connectWsBtn = document.getElementById('connectWs');
-    const sendStatusBtn = document.getElementById('sendStatus');
-    const wsLog = document.getElementById('wsLog');
-    const themeBtn = document.getElementById('themeBtn');
-    const shareBtn = document.getElementById('shareBtn');
-    const pipBtn = document.getElementById('pipBtn');
-
-    // state
-    let hls = null;
-    let statsInterval = null;
-    let ws = null;
-    let currentChannel = null; // object { id, name }
-    let channels = [];
-    let hideUrl = true; // do not show url anywhere
-
-    // helpers
-    function logUI(el, ...parts){ const d=document.createElement('div'); d.className='row'; d.textContent = `[${new Date().toLocaleTimeString()}] ${parts.join(' ')}`; el.prepend(d); while(el.children.length>80) el.removeChild(el.lastChild); }
-    function showLoading(txt){ loading.classList.remove('hidden'); loadingText.textContent = txt||'Cargando...'; }
-    function hideLoading(){ loading.classList.add('hidden'); }
-    function showError(title, detail){ errorBox.classList.remove('hidden'); errorTitle.textContent = title||'Error'; errorDetail.textContent = detail||''; }
-    function hideError(){ errorBox.classList.add('hidden'); }
-
-    // disable context menu on video to make url less trivially visible
-    video.addEventListener('contextmenu', e=>{ e.preventDefault(); return false; });
-
-    // persist volume & theme
-    try{ const v=localStorage.getItem('iptv_volume'); if(v!==null) video.volume = parseFloat(v); volume.value = Math.round(video.volume*100); }catch(e){}
-    try{ const t=localStorage.getItem('iptv_theme'); if(t) document.documentElement.setAttribute('data-theme',t);}catch(e){}
-
-    // shortcuts
-    document.addEventListener('keydown', e=>{
-      if(e.key===' ') { e.preventDefault(); togglePlay(); }
-      if(e.key==='m') toggleMute();
-      if(e.key==='f') toggleFull();
-    });
-
-    // ========== Channels ==========
-    async function fetchChannels(){
-      channelsList.textContent = 'Cargando canales...';
-      try{
-        const res = await fetch(`${BACKEND_URL}/api/channels?token=${encodeURIComponent(token)}`, { cache:'no-store' });
-        if(!res.ok) throw new Error('No se pudo listar canales');
-        const json = await res.json();
-        // expect [{id,name}] or similar
-        channels = Array.isArray(json)?json:[];
-      }catch(e){
-        // fallback: ask backend for current token info (some backends only provide stream-info)
-        channels = [];
-        logUI(wsLog,'No se pudo obtener lista de canales desde backend:', e.message);
-      }
-      renderChannels();
-    }
-
-    function renderChannels(){
-      channelsList.innerHTML = '';
-      const filter = channelFilter.value.toLowerCase();
-      const list = channels.filter(c=>!filter || (c.name||'').toLowerCase().includes(filter));
-      if(list.length===0){ channelsList.textContent = channels.length===0 ? 'No hay canales listados' : 'No encontrado'; return }
-      list.forEach(ch=>{
-        const r = document.createElement('div'); r.className='row';
-        const left = document.createElement('div'); left.textContent = ch.name || ch.id;
-        const right = document.createElement('div');
-        const btn = document.createElement('button'); btn.className='btn secondary'; btn.textContent = 'Ver';
-        btn.addEventListener('click', ()=> selectChannel(ch));
-        right.appendChild(btn);
-        r.appendChild(left); r.appendChild(right);
-        channelsList.appendChild(r);
-      });
-    }
-
-    channelFilter.addEventListener('input', renderChannels);
-    refreshChannels.addEventListener('click', fetchChannels);
-
-    // ========== Load channel without exposing URL ==========
-    async function selectChannel(ch){
-      // ch can be id or object
-      const id = ch.id || ch;
-      currentChannel = ch;
-      infoChannel.textContent = ch.name || id;
-      showLoading('Preparando canal...');
-      hideError();
-
-      try{
-        // Prefer backend to return a proxied/temporary URL so we don't expose original URL to client
-        // backend endpoint /api/stream-proxy?token=...&channel_id=... should return { stream_url: 'https://...' }
-        const proxyUrl = `${BACKEND_URL}/api/stream-proxy?token=${encodeURIComponent(token)}&channel_id=${encodeURIComponent(id)}`;
-        let streamResponse = null;
-        try{
-          const r = await fetch(proxyUrl, { cache:'no-store' });
-          if(r.ok) streamResponse = await r.json();
-        }catch(e){ streamResponse = null; }
-
-        let streamUrl = null;
-        if(streamResponse && streamResponse.stream_url){ streamUrl = streamResponse.stream_url; }
-        else {
-          // fallback to stream-info for the token (may return a single stream_url)
-          const infoRes = await fetch(`${BACKEND_URL}/api/stream-info?token=${encodeURIComponent(token)}&channel_id=${encodeURIComponent(id)}`, { cache:'no-store' });
-          if(infoRes.ok){ const info = await infoRes.json(); if(!info.error && info.stream_url) streamUrl = info.stream_url; }
+        if (!token) {
+            showError('Token de acceso requerido', 'ERR_NO_TOKEN');
+        } else {
+            initPlayer();
         }
 
-        if(!streamUrl) throw new Error('No se obtuvo URL de reproducción');
+        async function initPlayer() {
+            try {
+                // Obtener información del token desde el backend de Render
+                const apiUrl = `${BACKEND_URL}/api/stream-info?token=${token}`;
 
-        // IMPORTANT: do NOT expose streamUrl in UI or logs. Keep in-memory only.
-        loadStreamHidden(streamUrl);
-        hideLoading();
-      }catch(err){
-        hideLoading();
-        showError('No se pudo cargar canal', err.message||String(err));
-        console.error(err);
-      }
-    }
+                const infoResponse = await fetch(apiUrl);
+                const info = await infoResponse.json();
 
-    function loadStreamHidden(streamUrl){
-      // streamUrl is used locally but never displayed. We try to use hls.js or native playback.
-      destroyHls();
-      if(isHls(streamUrl) && Hls.isSupported()){
-        hls = new Hls({enableWorker:true,lowLatencyMode:true});
-        hls.attachMedia(video);
-        hls.loadSource(streamUrl);
-        hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ video.play().catch(()=>{}); populateQuality(); startStats(); });
-        hls.on(Hls.Events.ERROR, (ev,data)=>{ console.warn('hls err',data); });
-      } else {
-        video.src = streamUrl; video.play().catch(()=>{}); startStats();
-      }
-      // prevent copying src via DOM (best-effort): remove video.src attribute after attach
-      try{ setTimeout(()=>{ if(video.src && !video.paused){ video.removeAttribute('src'); video.load(); } }, 1500); }catch(e){}
-    }
+                if (info.error) {
+                    showError(info.error, 'ERR_TOKEN_INVALID');
+                    return;
+                }
 
-    function isHls(u){ return typeof u==='string' && (u.includes('.m3u8')||/application\/vnd\.apple\.mpegurl/i.test(u)); }
+                channelTitle.textContent = info.channel_name || 'Canal IPTV';
+                const streamUrl = info.stream_url;
 
-    function populateQuality(){ qualitySelect.innerHTML = '<option value="auto">Calidad: Auto</option>'; if(!hls||!hls.levels) return; hls.levels.forEach((l,i)=>{ const opt=document.createElement('option'); opt.value=i; opt.textContent = `${l.width||'HD'}x${l.height||''} — ${Math.round((l.bitrate||0)/1000)} kbps`; qualitySelect.appendChild(opt); }); qualitySelect.onchange = ()=>{ const v=qualitySelect.value; if(v==='auto') hls.currentLevel=-1; else hls.currentLevel=parseInt(v); } }
+                // Detectar si es HLS o stream directo
+                if (streamUrl.includes('.m3u8') || streamUrl.includes('application/vnd.apple.mpegurl')) {
+                    loadHLSStream(streamUrl);
+                } else {
+                    // Stream directo (MP4, RTMP, etc)
+                    loadDirectStream(streamUrl);
+                }
 
-    function destroyHls(){ try{ if(hls){ hls.destroy(); hls=null; } }catch(e){ hls=null; } }
-
-    // ========== stats & monitoring ==========
-    function startStats(){ if(statsInterval) clearInterval(statsInterval); statsInterval = setInterval(()=>{
-      if(video.videoWidth) infoRes.textContent = `${video.videoWidth}x${video.videoHeight}`;
-      const b = video.buffered; if(b && b.length){ infoBuffer.textContent = (b.end(b.length-1)-video.currentTime).toFixed(1)+'s'; }
-      if(hls && hls.levels && hls.currentLevel>=0) infoBitrate.textContent = ((hls.levels[hls.currentLevel].bitrate||0)/1000000).toFixed(2)+' Mbps';
-      if(video.getVideoPlaybackQuality){ try{ const q=video.getVideoPlaybackQuality(); infoFps.textContent = Math.round(q.totalVideoFrames/Math.max(1,Math.floor(video.currentTime)))+' fps'; }catch(e){} }
-      if(!video.paused){ const cur = formatTime(video.currentTime); timeDisplay.textContent = `${cur} / LIVE`; }
-    },1200); }
-
-    function stopStats(){ if(statsInterval) clearInterval(statsInterval); statsInterval=null; }
-
-    function formatTime(s){ if(!s||!isFinite(s)) return '00:00'; const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=Math.floor(s%60); return h>0?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` }
-
-    // ========== Controls ==========
-    function togglePlay(){ if(video.paused) { video.play().catch(()=>{}); playBtn.textContent='⏸️ Pause'; } else { video.pause(); playBtn.textContent='▶️ Play'; } }
-    function toggleMute(){ video.muted = !video.muted; muteBtn.textContent = video.muted ? '🔇' : '🔊'; }
-    function toggleFull(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); else document.exitFullscreen(); }
-
-    playBtn.addEventListener('click', togglePlay);
-    muteBtn.addEventListener('click', toggleMute);
-    volume.addEventListener('input', e=>{ video.volume = e.target.value/100; try{ localStorage.setItem('iptv_volume', video.volume); }catch(e){} });
-
-    retryBtn.addEventListener('click', ()=>{ hideError(); if(currentChannel) selectChannel(currentChannel); else init(); });
-
-    // PiP
-    pipBtn.addEventListener('click', async ()=>{ try{ if(document.pictureInPictureElement) await document.exitPictureInPicture(); else await video.requestPictureInPicture(); }catch(e){ alert('PiP no soportado'); } });
-
-    // share
-    shareBtn.addEventListener('click', ()=>{ if(navigator.share) navigator.share({title:document.title,url:window.location.href}).catch(()=>{}); else navigator.clipboard.writeText(window.location.href).then(()=>alert('Enlace copiado')); });
-
-    // theme
-    themeBtn.addEventListener('click', ()=>{ const cur = document.documentElement.getAttribute('data-theme'); const next = cur==='light' ? '' : 'light'; document.documentElement.setAttribute('data-theme', next); try{ localStorage.setItem('iptv_theme', next); }catch(e){} });
-
-    // ========== WebSocket remote (bot) ==========
-    function wsUrl(){ try{ const u = new URL(BACKEND_URL); u.protocol = (u.protocol==='https:')?'wss:':(u.protocol==='http:'?'ws:':u.protocol); u.pathname = (u.pathname.endsWith('/')?u.pathname.slice(0,-1):u.pathname) + '/ws'; u.search = `?token=${encodeURIComponent(token||'')}`; return u.toString(); }catch(e){ return null } }
-
-    connectWsBtn.addEventListener('click', ()=>{ if(ws && ws.readyState===WebSocket.OPEN) { ws.close(); } else connectWs(); });
-    sendStatusBtn.addEventListener('click', sendStatus);
-
-    function connectWs(){ const u = wsUrl(); if(!u){ logUI(wsLog,'WS no disponible'); return; } ws = new WebSocket(u); logUI(wsLog,'Conectando a',u);
-      ws.addEventListener('open', ()=>{ logUI(wsLog,'WS abierto'); connectWsBtn.textContent='Desconectar WS'; ws.send(JSON.stringify({type:'hello',source:'player',ts:Date.now()})); });
-      ws.addEventListener('message', e=>{ try{ const d=JSON.parse(e.data); handleRemote(d); logUI(wsLog,'Recibido', e.data); }catch(err){ logUI(wsLog,'WS parse error', err.message); } });
-      ws.addEventListener('close', ()=>{ logUI(wsLog,'WS cerrado'); connectWsBtn.textContent='Conectar WS'; });
-      ws.addEventListener('error', err=>{ logUI(wsLog,'WS error'); });
-    }
-
-    function sendStatus(){ if(!ws||ws.readyState!==WebSocket.OPEN) return; const payload = { type:'status', playing:!video.paused, current:video.currentTime, resolution: video.videoWidth?`${video.videoWidth}x${video.videoHeight}`:'-', bitrate: infoBitrate.textContent||'-' }; ws.send(JSON.stringify(payload)); logUI(wsLog,'Status enviado'); }
-
-    function handleRemote(cmd){ if(!cmd || !cmd.command) return; switch(cmd.command){
-      case 'play': video.play().catch(()=>{}); playBtn.textContent='⏸️ Pause'; break;
-      case 'pause': video.pause(); playBtn.textContent='▶️ Play'; break;
-      case 'toggle': togglePlay(); break;
-      case 'set_channel': if(cmd.channel_id){ const ch = channels.find(c=>c.id==cmd.channel_id) || {id:cmd.channel_id,name:cmd.channel_name||cmd.channel_id}; selectChannel(ch); } break;
-      case 'set_quality': if(typeof cmd.level!=='undefined' && hls) { hls.currentLevel = parseInt(cmd.level); qualitySelect.value = String(cmd.level); } break;
-      case 'seek': if(typeof cmd.time==='number') video.currentTime = cmd.time; break;
-      case 'mute': if(typeof cmd.value!=='undefined'){ video.muted = !!cmd.value; muteBtn.textContent = video.muted ? '🔇' : '🔊'; } break;
-      case 'status': sendStatus(); break;
-      default: logUI(wsLog,'Comando desconocido',cmd.command); }
-    }
-
-    // ========== Init flow ==========
-    async function init(){
-      if(!token){ showError('Token requerido','Pasa el token en la URL ?token=...'); return }
-      hideError(); showLoading('Conectando...');
-      try{
-        // try to fetch channels, if API supports it
-        await fetchChannels();
-        // try to fetch default stream info if backend returns single stream
-        const res = await fetch(`${BACKEND_URL}/api/stream-info?token=${encodeURIComponent(token)}`, { cache:'no-store' });
-        if(res.ok){ const info = await res.json(); if(!info.error){ if(info.channel_name) document.getElementById('channelTitle').textContent = info.channel_name; // do not display stream URL
-            if(info.channel_id) { const fallback = {id:info.channel_id, name: info.channel_name}; channels.unshift(fallback); renderChannels(); }
-            // auto-play if backend returns stream for token
-            if(info.stream_url){ // but do not show it
-              loadStreamHidden(info.stream_url);
+            } catch (error) {
+                console.error('Init error:', error);
+                showError('Error de inicialización', error.message);
             }
-          }
         }
-      }catch(e){ console.error(e); }
-      hideLoading();
-    }
 
-    window.addEventListener('beforeunload', ()=>{ try{ if(hls) hls.destroy(); if(ws) ws.close(); }catch(e){} });
+        function loadHLSStream(streamUrl) {
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    debug: false,
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90,
+                    maxBufferLength: 30,
+                    maxMaxBufferLength: 600,
+                    manifestLoadingTimeOut: 10000,
+                    manifestLoadingMaxRetry: 3,
+                    levelLoadingTimeOut: 10000,
+                    levelLoadingMaxRetry: 4,
+                    fragLoadingTimeOut: 20000,
+                    fragLoadingMaxRetry: 6,
+                });
 
-    // start
-    init();
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
 
-    // expose for debugging
-    window._iptv = { selectChannel, fetchChannels, connectWs };
-  </script>
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video.play().then(() => {
+                        hideLoading();
+                        updateStatus('live', 'En Vivo');
+                        showToast('✅ Conectado exitosamente');
+                        startStatsMonitoring();
+                    }).catch(e => {
+                        showError('Error al iniciar reproducción', e.message);
+                    });
+                });
+
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    console.error('HLS Error:', data);
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                showError('Error de red', `${data.details} - Reintentando...`);
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                showError('Error de medios', data.details);
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                showError('Error fatal', data.details);
+                                break;
+                        }
+                    }
+                });
+
+                hls.on(Hls.Events.LEVEL_SWITCHED, function(event, data) {
+                    updateVideoStats();
+                });
+
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari nativo
+                video.src = streamUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    video.play().then(() => {
+                        hideLoading();
+                        updateStatus('live', 'En Vivo');
+                        showToast('✅ Conectado exitosamente');
+                        startStatsMonitoring();
+                    });
+                });
+
+                video.addEventListener('error', function(e) {
+                    showError('Error de reproducción', video.error ? video.error.message : 'Unknown');
+                });
+            } else {
+                showError('Formato no soportado', 'Tu navegador no soporta HLS');
+            }
+        }
+
+        function loadDirectStream(streamUrl) {
+            video.src = streamUrl;
+            video.addEventListener('loadedmetadata', function() {
+                video.play().then(() => {
+                    hideLoading();
+                    updateStatus('live', 'En Vivo');
+                    showToast('✅ Conectado exitosamente');
+                    startStatsMonitoring();
+                }).catch(e => {
+                    showError('Error al iniciar reproducción', e.message);
+                });
+            });
+
+            video.addEventListener('error', function(e) {
+                showError('Error de reproducción', video.error ? video.error.message : 'Unknown');
+            });
+        }
+
+        function togglePlay() {
+            if (video.paused) {
+                video.play();
+                playPauseBtn.textContent = '⏸️ Pause';
+                updateStatus('live', 'En Vivo');
+            } else {
+                video.pause();
+                playPauseBtn.textContent = '▶️ Play';
+                updateStatus('loading', 'Pausado');
+            }
+        }
+
+        function toggleMute() {
+            video.muted = !video.muted;
+            document.getElementById('muteBtn').textContent = video.muted ? '🔇' : '🔊';
+        }
+
+        function toggleStats() {
+            statsOverlay.classList.toggle('hidden');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        volumeSlider.addEventListener('input', function() {
+            video.volume = this.value / 100;
+            video.muted = this.value == 0;
+            document.getElementById('muteBtn').textContent = video.muted ? '🔇' : '🔊';
+        });
+
+        video.volume = 0.8;
+
+        function updateStatus(type, text) {
+            statusIndicator.className = `status-indicator status-${type}`;
+            statusText.textContent = text;
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
+        function showError(title, details) {
+            loading.style.display = 'none';
+            error.style.display = 'block';
+            document.getElementById('errorMessage').textContent = title;
+            document.getElementById('errorCode').textContent = details;
+            updateStatus('error', 'Error');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function startStatsMonitoring() {
+            updateVideoStats();
+            statsInterval = setInterval(updateVideoStats, 2000);
+        }
+
+        function updateVideoStats() {
+            if (!video.videoWidth) return;
+
+            document.getElementById('resolutionText').textContent =
+                `${video.videoWidth}x${video.videoHeight}`;
+
+            if (hls && hls.levels && hls.currentLevel >= 0) {
+                const level = hls.levels[hls.currentLevel];
+                const bitrate = (level.bitrate / 1000000).toFixed(2);
+                document.getElementById('bitrateText').textContent = `${bitrate} Mbps`;
+
+                qualityScore = Math.min(100, Math.floor((level.bitrate / 10000)));
+                updateQualityIndicator(qualityScore);
+            }
+
+            const buffered = video.buffered;
+            if (buffered.length > 0) {
+                const bufferEnd = buffered.end(buffered.length - 1);
+                const bufferAmount = bufferEnd - video.currentTime;
+                document.getElementById('bufferText').textContent =
+                    `${bufferAmount.toFixed(1)}s`;
+            }
+
+            if (video.getVideoPlaybackQuality) {
+                const quality = video.getVideoPlaybackQuality();
+                const fps = quality.totalVideoFrames / video.currentTime;
+                if (fps > 0 && isFinite(fps)) {
+                    document.getElementById('fpsText').textContent =
+                        Math.round(fps) + ' fps';
+                }
+            }
+
+            if (!video.paused) {
+                const current = formatTime(video.currentTime);
+                const duration = video.duration && isFinite(video.duration)
+                    ? formatTime(video.duration)
+                    : 'LIVE';
+                timeDisplay.textContent = `${current} / ${duration}`;
+            }
+        }
+
+        function updateQualityIndicator(score) {
+            const qualityText = document.getElementById('qualityText');
+            qualityText.className = 'stat-value';
+
+            if (score >= 85) {
+                qualityText.textContent = '🟢 Excelente';
+                qualityText.classList.add('quality-excellent');
+            } else if (score >= 60) {
+                qualityText.textContent = '🟡 Buena';
+                qualityText.classList.add('quality-good');
+            } else {
+                qualityText.textContent = '🔴 Regular';
+                qualityText.classList.add('quality-poor');
+            }
+        }
+
+        function formatTime(seconds) {
+            if (!seconds || !isFinite(seconds)) return '00:00';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) {
+                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        video.addEventListener('timeupdate', () => {
+            if (!video.paused && video.duration) {
+                updateVideoStats();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (hls) {
+                hls.destroy();
+            }
+            if (statsInterval) {
+                clearInterval(statsInterval);
+            }
+        });
+    </script>
 </body>
 </html>

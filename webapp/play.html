@@ -1,217 +1,120 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>IptvChekProk_bot — Reproductor (Corrigiendo CORS)</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <style>
-    body{margin:12px;background:#05060a;color:#fff;font-family:-apple-system,Segoe UI,Arial}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));border-radius:12px;padding:12px}
-    .overlay{background:rgba(0,0,0,0.6);padding:12px;border-radius:8px;margin-bottom:8px}
-    button{padding:8px 12px;border-radius:8px;border:0;background:#222;color:#fff;cursor:pointer}
-    video{width:100%;max-height:60vh;background:#000;display:block;border-radius:8px;overflow:hidden}
-    .muted{color:#9aa4c7;font-size:13px}
-    pre{white-space:pre-wrap;color:#cbd5e1}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>IPTV Player Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .video-container { flex: 1; position: relative; background: #000; }
+        video { width: 100%; height: 100%; object-fit: contain; }
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        .overlay.hidden { display: none; }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .info { margin-top: 20px; text-align: center; padding: 0 20px; }
+        .controls {
+            background: rgba(0,0,0,0.95);
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h3>IptvChekProk_bot — Reproductor (Debug CORS)</h3>
-
-    <div id="statusBox" class="overlay">
-      <strong id="ovTitle">Iniciando</strong>
-      <div id="ovMsg" class="muted">Preparando...</div>
-      <div style="margin-top:8px">
-        <button id="retryBtn" style="display:none">Reintentar</button>
-      </div>
+    <div class="video-container">
+        <video id="video" controls playsinline></video>
+        <div class="overlay" id="overlay">
+            <div class="spinner"></div>
+            <div class="info">
+                <div id="channelName">Cargando...</div>
+                <div id="status">Inicializando</div>
+            </div>
+        </div>
     </div>
-
-    <video id="video" controls playsinline></video>
-
-    <div style="margin-top:8px">
-      <div class="muted">Intentados:</div>
-      <div id="tried" class="muted" style="margin-bottom:6px"></div>
-      <pre id="debug" style="background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;"></pre>
+    <div class="controls">
+        <button onclick="video.play()">▶ Play</button>
+        <button onclick="video.pause()">⏸ Pause</button>
+        <button onclick="location.reload()">🔄 Reload</button>
     </div>
-  </div>
+    <script>
+        const token = new URLSearchParams(window.location.search).get('token');
+        const video = document.getElementById('video');
+        const overlay = document.getElementById('overlay');
+        let hls = null;
 
-  <script>
-  (function(){
-    const video = document.getElementById('video');
-    const ovTitle = document.getElementById('ovTitle');
-    const ovMsg = document.getElementById('ovMsg');
-    const retryBtn = document.getElementById('retryBtn');
-    const debug = document.getElementById('debug');
-    const triedEl = document.getElementById('tried');
-
-    const params = new URLSearchParams(location.search);
-    const token = params.get('token');
-    const apiParam = params.get('api'); // si quieres forzar endpoint: ?token=...&api=https://...
-    const useCorsProxy = params.get('use_cors_proxy') === '1'; // opcional: ?use_cors_proxy=1
-
-    // Endpoints: orden de prueba
-    const endpoints = [];
-    if (apiParam) endpoints.push(apiParam);
-    endpoints.push('https://iptvpro-check-5nvh.onrender.com/api/stream-info');
-    endpoints.push('/api/stream-info');
-
-    // proxy público (solo si lo pides). NO habilitado por defecto.
-    const corsProxy = 'https://api.allorigins.win/raw?url='; // funciona para pruebas rápidas
-
-    let _hls = null;
-    let _streamUrl = null;
-    let _tried = [];
-
-    function setStatus(title, msg, showRetry=false){
-      ovTitle.textContent = title;
-      ovMsg.textContent = msg;
-      retryBtn.style.display = showRetry ? 'inline-block' : 'none';
-      triedEl.textContent = _tried.join(' | ') || '—';
-    }
-
-    function appendDebug(line){
-      const now = new Date().toISOString();
-      debug.textContent = now + '  ' + line + '\n' + debug.textContent;
-    }
-
-    async function tryFetchInfo(){
-      _tried = [];
-      debug.textContent = '';
-      if (!token){
-        setStatus('❌ Token faltante', 'Añade ?token=TU_TOKEN a la URL.', false);
-        appendDebug('Token no proporcionado.');
-        return;
-      }
-      setStatus('Conectando', 'Probando endpoints...', false);
-
-      for (const base of endpoints){
-        if (!base) continue;
-        _tried.push(base);
-        triedEl.textContent = _tried.join(' | ');
-        // construimos URL con token
-        const sep = base.includes('?') ? '&' : '?';
-        const targetUrl = base + sep + 'token=' + encodeURIComponent(token);
-
-        // Si pediste usar proxy, construye la url proxy
-        const finalUrl = (useCorsProxy && !base.startsWith('/') && !base.startsWith(location.origin)) ? (corsProxy + encodeURIComponent(targetUrl)) : targetUrl;
-
-        setStatus('Probando', base, false);
-        appendDebug(`Intentando: ${finalUrl}`);
-
-        try {
-          // Important: NO usamos credentials (evita preflight con credenciales) y forzamos CORS.
-          const controller = new AbortController();
-          const timeoutId = setTimeout(()=> controller.abort(), 12000);
-
-          const res = await fetch(finalUrl, {
-            method: 'GET',
-            mode: 'cors', // pedir CORS
-            // NO credentials para evitar preflights con cookies
-            signal: controller.signal
-          });
-
-          clearTimeout(timeoutId);
-
-          appendDebug(`HTTP ${res.status} ${res.statusText}`);
-
-          if (!res.ok){
-            // Intentamos leer texto del body (puede ayudar).
-            let bodyText = '';
-            try { bodyText = await res.text(); } catch(e) { bodyText = '(no se pudo leer body)'; }
-            appendDebug(`Body: ${bodyText.slice(0,800)}`);
-            setStatus('❌ Respuesta no OK', `HTTP ${res.status} - ${res.statusText}`, true);
-            continue;
-          }
-
-          // parse JSON (si se usó proxy como allorigins, la respuesta será el texto crudo; allorigins/raw retorna body crudo)
-          let data = null;
-          try {
-            // si usamos allorigins/raw, ya es el body real (no JSON wrapper)
-            data = await res.json();
-          } catch (e) {
-            // no pudo parsear JSON -> mostrar body como texto
-            const body = await res.text();
-            appendDebug('Respuesta no JSON: ' + body.slice(0,1000));
-            setStatus('❌ Respuesta inesperada', 'El servidor devolvió un body no-JSON.', true);
-            continue;
-          }
-
-          // validación mínima
-          if (!data || !data.stream_url){
-            appendDebug('JSON recibido: ' + JSON.stringify(data).slice(0,1000));
-            setStatus('❌ stream_url no encontrado', 'El JSON no contiene "stream_url".', true);
-            continue;
-          }
-
-          // OK: tenemos URL (la guardamos en variable privada)
-          _streamUrl = data.stream_url;
-          appendDebug('Stream recibido. Iniciando reproducción (URL oculta).');
-          setStatus('Conectado', 'Reproduciendo...', false);
-
-          await startPlayback(_streamUrl, data);
-
-          // limpiar referencia local para minimizar exposición
-          _streamUrl = null;
-          return;
-        } catch (err){
-          const msg = err.name === 'AbortError' ? 'Timeout (12s)' : (err.message || String(err));
-          appendDebug(`Error fetch: ${msg}`);
-          setStatus('❌ Error conexión', `${base} → ${msg}`, true);
-          // continuar con siguiente endpoint
-          continue;
+        async function init() {
+            if (!token) {
+                overlay.innerHTML = '<div class="info"><h3>❌ Token no proporcionado</h3></div>';
+                return;
+            }
+            try {
+                const res = await fetch(`https://iptvpro-check-5nvh.onrender.com/api/stream-info?token=${token}`);
+                if (!res.ok) throw new Error('Token inválido');
+                const data = await res.json();
+                document.getElementById('channelName').textContent = data.channel_name;
+                
+                if (data.stream_url.includes('.m3u8') && Hls.isSupported()) {
+                    hls = new Hls({ enableWorker: true, maxBufferLength: 30 });
+                    hls.loadSource(data.stream_url);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        overlay.classList.add('hidden');
+                        video.play().catch(() => {});
+                    });
+                    hls.on(Hls.Events.ERROR, (e, d) => {
+                        if (d.fatal) {
+                            if (d.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
+                            else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+                        }
+                    });
+                } else {
+                    video.src = data.stream_url;
+                    video.addEventListener('loadeddata', () => {
+                        overlay.classList.add('hidden');
+                        video.play().catch(() => {});
+                    });
+                }
+            } catch (err) {
+                overlay.innerHTML = `<div class="info"><h3>❌ ${err.message}</h3></div>`;
+            }
         }
-      }
-
-      // si llegamos aquí, todos fallaron
-      setStatus('❌ Ningún endpoint respondió', 'Revisa CORS, token y API. Prueba ?use_cors_proxy=1 para probar con proxy público (temporal).', true);
-      appendDebug('Fallaron todos los endpoints. Revisa CORS y token en servidor.');
-    }
-
-    async function startPlayback(streamUrl, meta){
-      try {
-        if (streamUrl.includes('.m3u8') && window.Hls && Hls.isSupported()){
-          if (_hls) try{ _hls.destroy(); }catch(e){}
-          _hls = new Hls({ enableWorker:true, maxBufferLength:30 });
-          _hls.loadSource(streamUrl);
-          _hls.attachMedia(video);
-          _hls.on(Hls.Events.MANIFEST_PARSED, function(){
-            video.play().catch(()=>{});
-            appendDebug('MANIFEST_PARSED: reproducción iniciada.');
-          });
-          _hls.on(Hls.Events.ERROR, function(_, data){
-            appendDebug('HLS error: ' + (data && data.type) + ' - ' + (data && data.details));
-          });
-        } else {
-          video.src = streamUrl;
-          video.addEventListener('loadeddata', ()=> {
-            video.play().catch(()=>{});
-            appendDebug('loadeddata: reproducción iniciada (no-HLS).');
-          }, { once:true });
-          video.addEventListener('error', ()=> {
-            appendDebug('Error elemento <video> al reproducir.');
-            setStatus('❌ Error reproducción', 'El elemento video no pudo reproducir el recurso.', true);
-          }, { once:true });
-        }
-      } catch (e){
-        appendDebug('Error startPlayback: ' + (e.message || String(e)));
-        setStatus('❌ Error interno', e.message || String(e), true);
-      }
-    }
-
-    retryBtn.addEventListener('click', ()=>{
-      try { if (_hls) _hls.destroy(); } catch(e){}
-      tryFetchInfo();
-    });
-
-    window.addEventListener('load', ()=> {
-      tryFetchInfo();
-    });
-
-    window.addEventListener('beforeunload', ()=> {
-      try{ if (_hls) _hls.destroy(); }catch(e){}
-    });
-  })();
-  </script>
+        window.addEventListener('load', init);
+    </script>
 </body>
 </html>

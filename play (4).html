@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>IPTV Check Pro — Reproductor Profesional</title>
+
+<!-- hls.js -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+/* ---------------------------
+   VARIABLES & PALETA ELEGANTE
+   --------------------------- */
+:root{
+  --bg-dark:#071014;
+  --bg-dark-2:#0d1317;
+  --card: rgba(255,255,255,0.03);
+  --accent: #15b6a6;      /* teal elegante */
+  --accent-2: #cda15a;    /* cobre suave */
+  --muted: rgba(255,255,255,0.72);
+  --muted-2: rgba(255,255,255,0.42);
+  --danger:#ff6b6b;
+  --radius: 12px;
+  --glass: rgba(255,255,255,0.03);
+  --shadow: 0 14px 38px rgba(0,0,0,0.7);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+
+/* GLOBAL */
+html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-dark),var(--bg-dark-2));color:#fff;overflow:hidden;}
+*{box-sizing:border-box}
+
+/* BACKGROUND: elegante, animada y con textura sutil */
+.background {
+  position:fixed; inset:0; z-index:0;
+  background:
+    radial-gradient(1200px 800px at 10% 20%, rgba(21,182,166,0.06), transparent 8%),
+    radial-gradient(900px 600px at 90% 80%, rgba(205,161,90,0.04), transparent 6%),
+    linear-gradient(180deg, rgba(5,7,10,0.95), rgba(13,19,23,0.95));
+  filter: saturate(1.02);
+  pointer-events:none;
+  overflow:hidden;
+}
+.background::after{
+  content:"";
+  position:absolute; inset:-20%;
+  background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.01), transparent 10%);
+  opacity:0.6;
+  transform: rotate(6deg);
+  mix-blend-mode: overlay;
+  animation: slowmove 20s linear infinite;
+}
+@keyframes slowmove { from{transform:rotate(0deg) translateY(0)} to{transform:rotate(6deg) translateY(-30px)} }
+
+/* LAYOUT */
+.app {
+  position:relative;
+  z-index:1;
+  display:flex; flex-direction:column; height:100vh;
+}
+
+/* HEADER */
+.header {
+  display:flex; align-items:center; gap:14px; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.03); background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);
+}
+.logo { width:52px; height:52px; border-radius:10px; object-fit:cover; border:1px solid rgba(255,255,255,0.03); background:#071014; box-shadow:0 8px 24px rgba(0,0,0,0.6) }
+.title h1{margin:0;font-size:18px}
+.title p{margin:0;color:var(--muted-2);font-size:13px}
+.header-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.badge { padding:8px 12px;border-radius:999px;background:linear-gradient(90deg, rgba(21,182,166,0.06), rgba(205,161,90,0.03)); color:var(--accent); font-weight:700; border:1px solid rgba(21,182,166,0.10) }
+
+/* MAIN: player + sidebar */
+.main {
+  display:grid;
+  grid-template-columns: 1fr 360px;
+  gap:18px;
+  padding:16px;
+  flex:1;
+  align-items:start;
+}
+
+/* PLAYER CARD */
+.player {
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.05));
+  border-radius:var(--radius); padding:0; overflow:hidden; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.03); display:flex; flex-direction:column;
+}
+
+/* video area */
+.viewport { position:relative; background:linear-gradient(180deg,#000,#030303); min-height: 420px; display:flex; align-items:center; justify-content:center; }
+video#video { width:100%; height:100%; object-fit:contain; background:#000; }
+
+/* center overlay */
+.center-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+.big-spinner { width:68px;height:68px;border-radius:50%;border:6px solid rgba(255,255,255,0.05);border-top-color:var(--accent); animation:spin 1s linear infinite; box-shadow:0 10px 36px rgba(21,182,166,0.06); }
+@keyframes spin{ to{ transform:rotate(360deg) } }
+.center-overlay h2{ margin:12px 0 0 0; color:var(--accent); font-size:20px }
+.center-overlay p{ margin:6px 0 0 0; color:var(--muted-2) }
+
+/* CONTROLS AREA */
+.controls {
+  display:flex; align-items:center; gap:12px; padding:12px; border-top:1px solid rgba(255,255,255,0.02); background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.03));
+}
+
+/* left group */
+.controls .left { display:flex; align-items:center; gap:8px; }
+
+/* progress bar */
+.progress {
+  position:relative; flex:1; height:8px; background:rgba(255,255,255,0.03); border-radius:999px; overflow:hidden; cursor:pointer;
+}
+.progress .buffer { position:absolute; left:0; top:0; height:100%; width:0%; background:linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); }
+.progress .bar { position:absolute; left:0; top:0; height:100%; width:0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition:width .12s linear; }
+.progress .handle { position:absolute; top:50%; transform:translate(-50%,-50%); width:14px; height:14px; border-radius:50%; background:#fff; box-shadow:0 6px 16px rgba(0,0,0,0.6); display:none; }
+
+/* control buttons */
+.btn { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:transparent; border:1px solid rgba(255,255,255,0.03); color:#fff; cursor:pointer; font-weight:700; }
+.btn:hover { transform:translateY(-3px) }
+.btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#071214; border:1px solid rgba(0,0,0,0.12); box-shadow:0 10px 30px rgba(21,182,166,0.08) }
+
+/* small icon buttons */
+.icon { width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); cursor:pointer; }
+.icon:active{ transform:scale(.98) }
+
+/* right group */
+.controls .right { display:flex;align-items:center;gap:8px; }
+
+/* server chips */
+.servers { display:flex; gap:8px; flex-wrap:wrap; }
+.chip { padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); cursor:pointer; color:var(--muted); font-weight:700; }
+.chip.active { background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#071214; box-shadow:0 10px 28px rgba(21,182,166,0.08) }
+
+/* quality menu */
+.quality-menu { position:relative; }
+.quality-list { position:absolute; right:0; bottom:calc(100% + 8px); background:rgba(2,6,8,0.95); border-radius:8px; padding:8px; border:1px solid rgba(255,255,255,0.03); display:none; }
+.quality-list button { display:block; width:100%; text-align:left; padding:8px 10px; border-radius:6px; background:transparent; border:none; color:var(--muted); cursor:pointer; }
+.quality-list button:hover{ background:rgba(255,255,255,0.02); color:#fff; }
+
+/* SIDEBAR */
+.sidebar { display:flex; flex-direction:column; gap:12px; }
+.card { background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.03)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); overflow:auto; }
+.search input { width:100%; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); color:#fff }
+
+/* channel items */
+.channel { display:flex; gap:10px; align-items:center; padding:8px; border-radius:8px; cursor:pointer; transition:all .12s; }
+.channel:hover { transform:translateY(-4px); background: linear-gradient(90deg, rgba(21,182,166,0.03), rgba(205,161,90,0.02)); border:1px solid rgba(21,182,166,0.04) }
+.thumb { width:60px; height:44px; border-radius:6px; background:linear-gradient(180deg,#101214,#1a1f22); display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff }
+
+/* footer stats */
+.footer { padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid rgba(255,255,255,0.02); }
+.stats { display:flex; gap:14px; align-items:center; color:var(--muted) }
+
+/* small screens */
+@media (max-width:980px){
+  .main { grid-template-columns: 1fr; padding:12px; gap:12px; }
+  .viewport { min-height:48vh; }
+  .controls { position:fixed; left:12px; right:12px; bottom:84px; border-radius:14px; z-index:40; box-shadow:0 20px 40px rgba(0,0,0,0.7); }
+  .sidebar { order:2 }
+  .chip { padding:10px 14px; }
+  .icon { width:48px;height:48px }
+}
+
+/* scrollbars */
+::-webkit-scrollbar{height:8px;width:8px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.03);border-radius:8px}
+</style>
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+
+  <div class="app" role="application">
+    <!-- HEADER -->
+    <header class="header">
+      <img id="logo" class="logo" src="logo.png" alt="IPTV Check Pro logo" onerror="this.style.display='none'">
+      <div class="title">
+        <h1>IPTV Check Pro</h1>
+        <p id="channelTitle">Cargando canal...</p>
+      </div>
+
+      <div class="header-right">
+        <div class="badge" id="statusBadge">● EN VIVO</div>
+        <button class="btn" id="btnUpload" title="Subir lista (archivo .m3u)">⬆️ Subir</button>
+        <button class="btn" id="btnDownload" title="Descargar lista del backend">⬇️ Descargar</button>
+        <button class="btn" id="btnToggleList">📋 Canales</button>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main">
+      <!-- PLAYER -->
+      <section class="player" aria-label="Reproductor principal">
+        <div class="viewport" id="viewport">
+          <video id="video" playsinline webkit-playsinline controls crossorigin="anonymous"></video>
+
+          <div class="center-overlay" id="centerOverlay">
+            <div class="big-spinner" id="spinner"></div>
+            <h2 id="loadingTitle">Inicializando reproductor...</h2>
+            <p id="loadingSub">Conectando con servidor seguro</p>
+          </div>
+        </div>
+
+        <!-- CONTROLES -->
+        <div class="controls" role="toolbar">
+          <div class="left">
+            <button class="btn primary" id="playBtn">▶️</button>
+            <button class="btn" id="pauseBtn">⏸</button>
+
+            <!-- Vol - / + -->
+            <button class="btn" id="volDown" title="Bajar volumen">🔉 -</button>
+            <input id="volRange" type="range" min="0" max="1" step="0.01" value="1" style="width:110px">
+            <button class="btn" id="volUp" title="Subir volumen">🔊 +</button>
+
+            <button class="btn" id="muteBtn">🔇</button>
+            <button class="btn" id="speedBtn">1x</button>
+
+            <!-- progress -->
+            <div style="width:360px;max-width:42vw;min-width:180px;">
+              <div class="progress" id="progress">
+                <div class="buffer" id="bufferBar"></div>
+                <div class="bar" id="playBar"></div>
+                <div class="handle" id="handle"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px">
+                <div id="timeCurrent">00:00</div>
+                <div id="timeDuration">00:00</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="right">
+            <div class="servers" id="serverSelector" aria-hidden="true" style="display:none"></div>
+
+            <div class="quality-menu">
+              <button class="btn" id="qualityBtn">Calidad ⌄</button>
+              <div class="quality-list" id="qualityList" aria-hidden="true"></div>
+            </div>
+
+            <button class="btn" id="pipBtn" title="Picture-in-Picture">📺 PiP</button>
+            <button class="btn" id="fullscreenBtn" title="Pantalla completa">⛶</button>
+            <button class="btn" id="theaterBtn" title="Modo teatro">🎭</button>
+            <button class="btn" id="subToggle" title="Subtítulos">🄲</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar" aria-label="Lista de canales">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong>Canales</strong>
+            <small style="color:var(--muted)"><span id="channelsCount">0</span></small>
+          </div>
+          <div style="height:10px"></div>
+          <div class="search"><input id="search" placeholder="🔍 Buscar canal..." /></div>
+          <div style="height:8px"></div>
+          <div id="channelList" style="display:flex;flex-direction:column;gap:8px;max-height:58vh;overflow:auto">
+            <div style="color:var(--muted)">Cargando lista...</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12px;color:var(--muted)">Servidor</div>
+              <div id="currentServer">—</div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--muted)">Resolución</div>
+              <div id="currentRes">—</div>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="statsBtn">📊 Estadísticas</button>
+            <button class="btn" id="clearBtn">🧹 Limpiar</button>
+            <button class="btn" id="reportBtn">🚨 Reportar</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="stats">
+        <div><strong id="statBitrate">—</strong><div style="font-size:12px;color:var(--muted)">Bitrate</div></div>
+        <div><strong id="statLatency">—</strong><div style="font-size:12px;color:var(--muted)">Latency</div></div>
+        <div><strong id="statErrors">0</strong><div style="font-size:12px;color:var(--muted)">Errores</div></div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <div style="font-size:13px;color:var(--muted)">Tema</div>
+        <select id="uiSelect" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px;color:#fff">
+          <option value="dark">Premium</option>
+          <option value="apple">Apple-like</option>
+          <option value="plex">Plex-like</option>
+        </select>
+      </div>
+    </footer>
+  </div>
+
+<!-- Hidden file input for upload -->
+<input id="fileInput" type="file" accept=".m3u,.m3u8,.txt" style="display:none"/>
+
+<script>
+/* ==========================
+   CONFIG GENERAL (NO TOCAR CREDENCIALES)
+   ========================== */
+const params = new URLSearchParams(window.location.search);
+const token = params.get('token');
+const backend = params.get('backend') || window.location.origin;
+
+/* ELEMENTOS */
+const video = document.getElementById('video');
+const spinner = document.getElementById('spinner');
+const centerOverlay = document.getElementById('centerOverlay');
+const loadingTitle = document.getElementById('loadingTitle');
+const loadingSub = document.getElementById('loadingSub');
+const channelTitle = document.getElementById('channelTitle');
+const serverSelector = document.getElementById('serverSelector');
+const channelList = document.getElementById('channelList');
+const channelsCount = document.getElementById('channelsCount');
+const currentServer = document.getElementById('currentServer');
+const currentRes = document.getElementById('currentRes');
+const statBitrate = document.getElementById('statBitrate');
+const statLatency = document.getElementById('statLatency');
+const statErrors = document.getElementById('statErrors');
+
+const playBtn = document.getElementById('playBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const volDown = document.getElementById('volDown');
+const volUp = document.getElementById('volUp');
+const volRange = document.getElementById('volRange');
+const muteBtn = document.getElementById('muteBtn');
+const speedBtn = document.getElementById('speedBtn');
+const progress = document.getElementById('progress');
+const playBar = document.getElementById('playBar');
+const bufferBar = document.getElementById('bufferBar');
+const timeCurrent = document.getElementById('timeCurrent');
+const timeDuration = document.getElementById('timeDuration');
+const qualityBtn = document.getElementById('qualityBtn');
+const qualityList = document.getElementById('qualityList');
+const qualityMenu = document.querySelector('.quality-menu');
+const pipBtn = document.getElementById('pipBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const theaterBtn = document.getElementById('theaterBtn');
+const subToggle = document.getElementById('subToggle');
+
+const btnUpload = document.getElementById('btnUpload');
+const fileInput = document.getElementById('fileInput');
+const btnDownload = document.getElementById('btnDownload');
+
+let hls = null;
+let currentChannel = null;
+let allChannels = [];
+let channelServers = {};
+let errorsCount = 0;
+let statsInterval = null;
+
+/* ===========================================================
+   FUNCIONES AUXILIARES Y DE INICIALIZACIÓN (NO EXPONER TOKENS)
+   =========================================================== */
+async function fetchSafe(url, opts={}) {
+  // No añadimos cabeceras secretas en frontend. Backend debe autorizar.
+  return fetch(url, opts);
+}
+
+function updateLoading(title, subtitle){
+  loadingTitle.textContent = title;
+  loadingSub.textContent = subtitle || '';
+  centerOverlay.style.opacity = '1';
+  centerOverlay.style.pointerEvents = 'auto';
+}
+function hideLoading(){
+  centerOverlay.style.opacity = '0';
+  centerOverlay.style.pointerEvents = 'none';
+}
+function showError(title, msg){
+  updateLoading(title, msg);
+  spinner.style.display = 'none';
+}
+
+/* INICIO */
+window.addEventListener('load', init);
+async function init(){
+  if(!token){
+    showError('Acceso no autorizado','Token no proporcionado. El front-end no modifica credenciales.');
+    return;
+  }
+  try {
+    updateLoading('Validando token...', '🔐 conectando con backend');
+    const infoRes = await fetchSafe(`${backend}/api/channel-info/${encodeURIComponent(token)}`);
+    if(!infoRes.ok) throw new Error('Token inválido o expirado');
+    const info = await infoRes.json();
+    currentChannel = info;
+    channelTitle.textContent = info.channel_name || 'Canal';
+    await loadPlaylist();
+    updateLoading('Iniciando stream...', '📡 Conectando servidor');
+    await startStream();
+    startStats();
+  } catch(err){
+    console.error(err);
+    showError('Error', err.message || String(err));
+  }
+}
+
+/* CARGAR PLAYLIST Y PROCESAR SERVERS */
+async function loadPlaylist(){
+  try {
+    const res = await fetchSafe(`${backend}/api/playlist-channels/${encodeURIComponent(token)}`);
+    if(!res.ok){
+      renderChannels([]);
+      return;
+    }
+    const data = await res.json();
+    allChannels = data.channels || [];
+    processServers();
+    renderChannels(allChannels);
+    renderServerChips();
+  } catch(e){ console.warn('No playlist', e); renderChannels([]); }
+}
+
+function processServers(){
+  channelServers = {};
+  allChannels.forEach(ch=>{
+    const base = (ch.title||ch.channel_name||'Sin nombre').replace(/\s*\[Server\s*\d+\]/gi,'').trim();
+    if(!channelServers[base]) channelServers[base] = [];
+    channelServers[base].push(ch);
+  });
+}
+
+/* RENDER CANALES */
+function renderChannels(list){
+  channelList.innerHTML = '';
+  if(!list || list.length===0){
+    channelList.innerHTML = '<div style="color:var(--muted)">Lista no disponible</div>';
+    channelsCount.textContent = 0;
+    return;
+  }
+  channelsCount.textContent = list.length;
+  list.slice(0,200).forEach(ch=>{
+    const div = document.createElement('div');
+    div.className = 'channel';
+    div.innerHTML = `<div class="thumb">${(ch.title||ch.channel_name||'--').substr(0,2).toUpperCase()}</div>
+                     <div style="flex:1"><div style="font-weight:800">${ch.title||ch.channel_name||'Canal'}</div><div style="font-size:13px;color:var(--muted)">${ch.group_name||'Sin categoría'} • ${ch.stream_type||'—'}</div></div>`;
+    div.onclick = ()=> {
+      // Si el canal trae token, navegamos con nuevo token (frontend no almacena secretos)
+      if(ch.token){
+        location.href = `${location.pathname}?token=${encodeURIComponent(ch.token)}&backend=${encodeURIComponent(backend)}`;
+      } else {
+        // fallback: reload
+        updateLoading('Cambiando canal...','Solicitando nuevo stream');
+        setTimeout(()=> location.reload(), 600);
+      }
+    };
+    channelList.appendChild(div);
+  });
+}
+
+/* SERVER CHIPS */
+function renderServerChips(){
+  serverSelector.innerHTML = '';
+  if(!currentChannel) return;
+  const curName = (currentChannel.channel_name||'').replace(/\s*\[Server\s*\d+\]/gi,'').trim();
+  const arr = channelServers[curName];
+  if(!arr || arr.length<=1) { serverSelector.style.display='none'; return; }
+  serverSelector.style.display='flex';
+  arr.forEach((s,idx)=>{
+    const chip = document.createElement('div'); chip.className='chip'+(s.id===currentChannel.id?' active':''); chip.textContent=`Srv ${idx+1}`;
+    chip.onclick = ()=> {
+      if(s.token) location.href = `${location.pathname}?token=${encodeURIComponent(s.token)}&backend=${encodeURIComponent(backend)}`;
+      else { updateLoading('Cambiando servidor...','Reintentando conexión'); setTimeout(()=> location.reload(),600); }
+    };
+    serverSelector.appendChild(chip);
+  });
+}
+
+/* =========================
+   STREAMING con HLS
+   ========================= */
+async function startStream(){
+  if(!currentChannel){ hideLoading(); return; }
+  const streamUrl = `${backend}/api/stream/${encodeURIComponent(token)}`;
+
+  if(currentChannel.stream_type === 'hls' && window.Hls && Hls.isSupported()){
+    if(hls){ hls.destroy(); hls = null; }
+    hls = new Hls({enableWorker:true, maxBufferLength:30, maxMaxBufferLength:60});
+    hls.on(Hls.Events.ERROR, function(e,d){
+      if(d && d.fatal){
+        errorsCount++; statErrors.textContent = errorsCount;
+        if(d.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
+        else if(d.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+      }
+    });
+    hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ hideLoading(); video.play().catch(()=>{}); populateQuality(); showShortInfo(); });
+    hls.on(Hls.Events.LEVEL_SWITCHED, ()=> {
+      const level = hls.currentLevel;
+      const levelInfo = hls.levels && hls.levels[level];
+      if(levelInfo) currentRes.textContent = (levelInfo.width && levelInfo.height) ? `${levelInfo.width}x${levelInfo.height}` : (levelInfo.bitrate ? `${Math.round(levelInfo.bitrate/1000)} kbps` : '—');
+    });
+    hls.on(Hls.Events.FRAG_BUFFERED, ()=> updateBuffer());
+    hls.loadSource(streamUrl);
+    hls.attachMedia(video);
+  } else {
+    // fallback: asignar src directo
+    video.src = streamUrl;
+    video.addEventListener('loadeddata', ()=> { hideLoading(); video.play().catch(()=>{}); showShortInfo(); updateBuffer(); });
+  }
+
+  currentServer.innerText = currentChannel.server_name || currentChannel.source || 'Principal';
+  currentRes.innerText = currentChannel.resolution || 'HD';
+}
+
+/* QUALITY */
+function populateQuality(){
+  qualityList.innerHTML = '';
+  if(!hls || !hls.levels) {
+    qualityList.innerHTML = '<div style="color:var(--muted)">Sin opciones</div>'; return;
+  }
+  qualityList.style.display = 'none';
+  const levels = hls.levels.slice();
+  // show "Auto" first
+  const btnAuto = document.createElement('button'); btnAuto.textContent='Auto (mejor)'; btnAuto.onclick = ()=> { hls.currentLevel = -1; qualityList.style.display='none'; };
+  qualityList.appendChild(btnAuto);
+  levels.forEach((lv, idx)=>{
+    const txt = (lv.width && lv.height) ? `${lv.width}x${lv.height} (${Math.round(lv.bitrate/1000)} kbps)` : `${Math.round(lv.bitrate/1000)} kbps`;
+    const b = document.createElement('button'); b.textContent = txt;
+    b.onclick = ()=> { hls.currentLevel = idx; qualityList.style.display='none'; };
+    qualityList.appendChild(b);
+  });
+}
+
+/* UPDATE BUFFER BAR (si aplica) */
+function updateBuffer(){
+  try {
+    if(hls && hls.bufferInfo){
+      const info = hls.bufferInfo(video.currentTime, 0.5);
+      const buffered = Math.min(1, (info && info.len) ? info.len/60 : 0); // normalized
+      bufferBar.style.width = `${Math.min(100, buffered*100)}%`;
+    } else if(video.buffered && video.buffered.length){
+      const bufferedTime = video.buffered.end(video.buffered.length-1) - video.currentTime;
+      bufferBar.style.width = `${Math.min(100, (bufferedTime/60)*100)}%`;
+    }
+  } catch(e){}
+}
+
+/* =========================
+   CONTROLES PLAYBACK & VOLUMEN
+   ========================= */
+playBtn.addEventListener('click', ()=> { video.play().catch(()=>{}); });
+pauseBtn.addEventListener('click', ()=> { video.pause(); });
+volDown.addEventListener('click', ()=> { volumeSet(Math.max(0, video.volume - 0.1)); });
+volUp.addEventListener('click', ()=> { volumeSet(Math.min(1, video.volume + 0.1)); });
+volRange.addEventListener('input', (e)=> volumeSet(parseFloat(e.target.value)));
+muteBtn.addEventListener('click', ()=> { video.muted = !video.muted; updateMuteUI(); });
+function volumeSet(v){
+  video.volume = v; volRange.value = v; video.muted = (v === 0); updateMuteUI();
+}
+function updateMuteUI(){ muteBtn.textContent = video.muted ? '🔇' : (video.volume > 0.5 ? '🔊' : '🔉'); }
+
+/* speed control */
+let speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
+let speedIndex = 2;
+speedBtn.addEventListener('click', ()=> {
+  speedIndex = (speedIndex + 1) % speeds.length;
+  video.playbackRate = speeds[speedIndex];
+  speedBtn.textContent = speeds[speedIndex] + 'x';
+});
+
+/* progress bar interaction */
+video.addEventListener('timeupdate', updateProgress);
+video.addEventListener('durationchange', ()=> timeDuration.textContent = formatTime(video.duration || 0));
+progress.addEventListener('click', (e)=> {
+  const rect = progress.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  if(!isNaN(video.duration) && video.duration > 0) video.currentTime = pct * video.duration;
+});
+function updateProgress(){
+  if(isNaN(video.duration) || video.duration === 0) { playBar.style.width='0%'; timeCurrent.textContent='00:00'; return; }
+  const pct = (video.currentTime / video.duration) * 100;
+  playBar.style.width = pct + '%';
+  timeCurrent.textContent = formatTime(video.currentTime);
+  timeDuration.textContent = formatTime(video.duration);
+}
+
+/* helper time */
+function formatTime(s){
+  if(!s || isNaN(s) || !isFinite(s)) return '00:00';
+  s = Math.floor(s);
+  const h = Math.floor(s/3600);
+  const m = Math.floor((s%3600)/60);
+  const sec = s%60;
+  return h>0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+/* quality dropdown toggle */
+qualityBtn.addEventListener('click', ()=> {
+  qualityList.style.display = qualityList.style.display === 'block' ? 'none' : 'block';
+});
+
+/* PIP */
+pipBtn.addEventListener('click', async ()=> {
+  try {
+    if(document.pictureInPictureElement) await document.exitPictureInPicture();
+    else await video.requestPictureInPicture();
+  } catch(e){ alert('PiP no disponible en este navegador'); }
+});
+
+/* fullscreen */
+fullscreenBtn.addEventListener('click', ()=> {
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen();
+});
+
+/* theater mode */
+theaterBtn.addEventListener('click', ()=> {
+  document.querySelector('.player').classList.toggle('theater');
+  // small effect: increase viewport height
+  const vp = document.getElementById('viewport');
+  if(vp.style.height) vp.style.height = '';
+  else vp.style.height = '70vh';
+});
+
+/* subtitles toggle (no subtitle files by default) */
+let subsOn = false;
+subToggle.addEventListener('click', ()=> {
+  subsOn = !subsOn;
+  subToggle.style.opacity = subsOn ? '1' : '0.7';
+  alert('Subtítulos: ' + (subsOn ? 'Activado (si hay track)' : 'Desactivado'));
+});
+
+/* =========================
+   Estadísticas simuladas / reales
+   ========================= */
+function startStats(){
+  if(statsInterval) clearInterval(statsInterval);
+  statsInterval = setInterval(()=> {
+    const br = (hls && hls.levels) ? `${Math.round((Math.random()*2500)+800)} kbps` : (video.readyState > 0 ? 'Adapt.' : '—');
+    statBitrate.textContent = br;
+    statLatency.textContent = `${Math.round(Math.random()*120)} ms`;
+    statErrors.textContent = errorsCount;
+  }, 2000);
+}
+
+/* =========================
+   Subir archivo local (.m3u) - SOLO CLIENTE
+   ========================= */
+btnUpload.addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', (e)=> {
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=> {
+    const text = reader.result;
+    parseM3UAndShow(text);
+  };
+  reader.readAsText(f);
+});
+function parseM3UAndShow(text){
+  // parse simple M3U: #EXTINF,- title \n url
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const channels = [];
+  for(let i=0;i<lines.length;i++){
+    if(lines[i].startsWith('#EXTINF')) {
+      const meta = lines[i].split(',').slice(1).join(',') || 'Canal';
+      const url = lines[i+1] || '';
+      channels.push({title: meta, url});
+    }
+  }
+  if(channels.length===0) alert('No se detectaron entradas M3U válidas.');
+  else {
+    // show in panel (temporary)
+    channelList.innerHTML = '';
+    channels.forEach(ch=>{
+      const d = document.createElement('div'); d.className='channel';
+      d.innerHTML = `<div class="thumb">${(ch.title||'--').substr(0,2).toUpperCase()}</div><div style="flex:1"><div style="font-weight:800">${ch.title}</div><div style="font-size:13px;color:var(--muted)">${ch.url}</div></div>`;
+      d.onclick = ()=> {
+        // play URL directly
+        playExternalUrl(ch.url, ch.title);
+      };
+      channelList.appendChild(d);
+    });
+    channelsCount.textContent = channels.length;
+    alert('Lista cargada localmente. Toca un canal para reproducir (esto no sube datos al servidor).');
+  }
+}
+function playExternalUrl(url, title){
+  updateLoading('Cargando stream local...', title || '');
+  hideQualityMenu();
+  try {
+    if(hls){ hls.destroy(); hls=null; }
+    if(Hls && Hls.isSupported()){
+      hls = new Hls();
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, ()=> { hideLoading(); video.play().catch(()=>{}); });
+    } else {
+      video.src = url;
+      video.addEventListener('loadeddata', ()=> { hideLoading(); video.play().catch(()=>{}); });
+    }
+  } catch(e){ showError('Error', 'No se pudo reproducir la URL local'); }
+}
+
+/* =========================
+   Descargar playlist desde backend (si existe endpoint)
+   ========================= */
+btnDownload.addEventListener('click', async ()=> {
+  if(!token) return alert('Token ausente');
+  updateLoading('Descargando playlist...', '');
+  try {
+    const res = await fetchSafe(`${backend}/api/playlist-download/${encodeURIComponent(token)}`);
+    if(!res.ok) throw new Error('No disponible');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'playlist.m3u'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    hideLoading();
+  } catch(e){
+    hideLoading();
+    alert('No se pudo descargar la playlist desde el backend (endpoint no disponible o error).');
+  }
+});
+
+/* =========================
+   UTILIDADES UI
+   ========================= */
+function showShortInfo(){
+  const old = loadingTitle.textContent;
+  loadingTitle.textContent = currentChannel.channel_name || 'Canal';
+  loadingSub.textContent = currentChannel.group_name || '';
+  setTimeout(()=> { loadingTitle.textContent = old; loadingSub.textContent = 'Conectando con servidor seguro'; hideLoading(); }, 2200);
+}
+function hideQualityMenu(){ qualityList.style.display='none'; }
+
+/* =========================
+   Atajos de teclado (mejorar usabilidad)
+   ========================= */
+window.addEventListener('keydown', (e)=>{
+  if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if(e.code === 'Space'){ e.preventDefault(); if(video.paused) video.play(); else video.pause(); }
+  if(e.code === 'ArrowLeft'){ video.currentTime = Math.max(0, video.currentTime - 10); }
+  if(e.code === 'ArrowRight'){ video.currentTime = Math.min(video.duration || Infinity, video.currentTime + 10); }
+  if(e.code === 'ArrowUp'){ volumeSet(Math.min(1, video.volume + 0.05)); }
+  if(e.code === 'ArrowDown'){ volumeSet(Math.max(0, video.volume - 0.05)); }
+  if(e.code === 'KeyF'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+});
+
+/* =========================
+   UTIL: formato tiempo y buffer updates
+   ========================= */
+function formatTime(s){
+  if(!s || isNaN(s) || !isFinite(s)) return '00:00';
+  s = Math.floor(s);
+  const h = Math.floor(s/3600);
+  const m = Math.floor((s%3600)/60);
+  const sec = s%60;
+  return h>0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+/* =========================
+   Ocultar menúes al click fuera
+   ========================= */
+document.addEventListener('click', (e)=>{
+  if(!qualityMenu.contains(e.target)) qualityList.style.display='none';
+});
+
+/* =========================
+   Protección final: ocultar spinner si tarda mucho
+   ========================= */
+setTimeout(()=> { centerOverlay.style.opacity='0'; centerOverlay.style.pointerEvents='none'; }, 8000);
+
+</script>
+</body>
+</html>

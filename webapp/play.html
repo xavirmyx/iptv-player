@@ -2,44 +2,47 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>IPTV Check Pro — Reproductor Profesional</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover, user-scalable=no">
+<title>IPTV Check Pro — Reproductor Profesional Avanzado</title>
 
 <!-- hls.js -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
 /* ---------------------------
-   VARIABLES & PALETA ELEGANTE
+   VARIABLES & PALETA ELEGANTE: OSCURO CON PLATEADO METÁLICO
    --------------------------- */
 :root{
-  --bg-dark:#071014;
-  --bg-dark-2:#0d1317;
-  --card: rgba(255,255,255,0.03);
-  --accent: #15b6a6;      /* teal elegante */
-  --accent-2: #cda15a;    /* cobre suave */
-  --muted: rgba(255,255,255,0.72);
-  --muted-2: rgba(255,255,255,0.42);
-  --danger:#ff6b6b;
-  --radius: 12px;
-  --glass: rgba(255,255,255,0.03);
-  --shadow: 0 14px 38px rgba(0,0,0,0.7);
+  --bg-dark: #0a0a0a; /* Negro profundo */
+  --bg-dark-2: #121212; /* Gris oscuro */
+  --card: rgba(255,255,255,0.02); /* Fondo tarjetas sutil */
+  --accent: #c0c0c0; /* Plateado metálico principal */
+  --accent-2: #a9a9a9; /* Plateado secundario */
+  --accent-hover: #d3d3d3; /* Plateado hover */
+  --muted: rgba(255,255,255,0.7); /* Texto muted */
+  --muted-2: rgba(255,255,255,0.4); /* Texto secundario */
+  --danger: #ff4d4d; /* Rojo para errores */
+  --success: #4caf50; /* Verde para éxito */
+  --radius: 16px; /* Bordes más suaves */
+  --glass: rgba(255,255,255,0.02); /* Efecto vidrio */
+  --shadow: 0 16px 40px rgba(0,0,0,0.8); /* Sombras profundas */
+  --metallic-gradient: linear-gradient(135deg, #c0c0c0 0%, #a9a9a9 50%, #c0c0c0 100%); /* Gradiente metálico */
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
 
 /* GLOBAL */
 html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-dark),var(--bg-dark-2));color:#fff;overflow:hidden;}
-*{box-sizing:border-box}
+*{box-sizing:border-box; transition: all 0.2s ease;}
 
-/* BACKGROUND: elegante, animada y con textura sutil */
+/* BACKGROUND: elegante, animada con textura metálica sutil */
 .background {
   position:fixed; inset:0; z-index:0;
   background:
-    radial-gradient(1200px 800px at 10% 20%, rgba(21,182,166,0.06), transparent 8%),
-    radial-gradient(900px 600px at 90% 80%, rgba(205,161,90,0.04), transparent 6%),
-    linear-gradient(180deg, rgba(5,7,10,0.95), rgba(13,19,23,0.95));
-  filter: saturate(1.02);
+    radial-gradient(1200px 800px at 10% 20%, rgba(192,192,192,0.04), transparent 8%),
+    radial-gradient(900px 600px at 90% 80%, rgba(169,169,169,0.03), transparent 6%),
+    linear-gradient(180deg, rgba(10,10,10,0.95), rgba(18,18,18,0.95));
+  filter: saturate(1.02) contrast(1.05);
   pointer-events:none;
   overflow:hidden;
 }
@@ -47,12 +50,12 @@ html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-dark),
   content:"";
   position:absolute; inset:-20%;
   background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.01), transparent 10%);
-  opacity:0.6;
+  opacity:0.5;
   transform: rotate(6deg);
   mix-blend-mode: overlay;
-  animation: slowmove 20s linear infinite;
+  animation: slowmove 25s linear infinite;
 }
-@keyframes slowmove { from{transform:rotate(0deg) translateY(0)} to{transform:rotate(6deg) translateY(-30px)} }
+@keyframes slowmove { from{transform:rotate(0deg) translateY(0)} to{transform:rotate(6deg) translateY(-40px)} }
 
 /* LAYOUT */
 .app {
@@ -63,107 +66,119 @@ html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-dark),
 
 /* HEADER */
 .header {
-  display:flex; align-items:center; gap:14px; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,0.03); background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);
+  display:flex; align-items:center; gap:16px; padding:14px 20px; border-bottom:1px solid rgba(255,255,255,0.02); background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);
 }
-.logo { width:52px; height:52px; border-radius:10px; object-fit:cover; border:1px solid rgba(255,255,255,0.03); background:#071014; box-shadow:0 8px 24px rgba(0,0,0,0.6) }
-.title h1{margin:0;font-size:18px}
-.title p{margin:0;color:var(--muted-2);font-size:13px}
-.header-right{margin-left:auto;display:flex;gap:10px;align-items:center}
-.badge { padding:8px 12px;border-radius:999px;background:linear-gradient(90deg, rgba(21,182,166,0.06), rgba(205,161,90,0.03)); color:var(--accent); font-weight:700; border:1px solid rgba(21,182,166,0.10) }
+.logo { width:56px; height:56px; border-radius:12px; object-fit:cover; border:1px solid rgba(255,255,255,0.02); background:#0a0a0a; box-shadow:0 10px 28px rgba(0,0,0,0.7); }
+.title h1{margin:0;font-size:20px; font-weight:700;}
+.title p{margin:0;color:var(--muted-2);font-size:14px;}
+.header-right{margin-left:auto;display:flex;gap:12px;align-items:center;}
+.badge { padding:8px 14px;border-radius:999px;background:var(--glass); color:var(--accent); font-weight:700; border:1px solid rgba(192,192,192,0.08); }
 
 /* MAIN: player + sidebar */
 .main {
   display:grid;
-  grid-template-columns: 1fr 360px;
-  gap:18px;
-  padding:16px;
+  grid-template-columns: 1fr 380px;
+  gap:20px;
+  padding:18px;
   flex:1;
   align-items:start;
 }
 
 /* PLAYER CARD */
 .player {
-  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.05));
-  border-radius:var(--radius); padding:0; overflow:hidden; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.03); display:flex; flex-direction:column;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.06));
+  border-radius:var(--radius); padding:0; overflow:hidden; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.02); display:flex; flex-direction:column;
 }
 
 /* video area */
-.viewport { position:relative; background:linear-gradient(180deg,#000,#030303); min-height: 420px; display:flex; align-items:center; justify-content:center; }
+.viewport { position:relative; background:linear-gradient(180deg,#000,#040404); min-height: 460px; display:flex; align-items:center; justify-content:center; }
 video#video { width:100%; height:100%; object-fit:contain; background:#000; }
 
 /* center overlay */
-.center-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
-.big-spinner { width:68px;height:68px;border-radius:50%;border:6px solid rgba(255,255,255,0.05);border-top-color:var(--accent); animation:spin 1s linear infinite; box-shadow:0 10px 36px rgba(21,182,166,0.06); }
+.center-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; transition: opacity 0.3s ease; }
+.big-spinner { width:72px;height:72px;border-radius:50%;border:6px solid rgba(255,255,255,0.04);border-top-color:var(--accent); animation:spin 1s linear infinite; box-shadow:0 12px 40px rgba(192,192,192,0.05); }
 @keyframes spin{ to{ transform:rotate(360deg) } }
-.center-overlay h2{ margin:12px 0 0 0; color:var(--accent); font-size:20px }
-.center-overlay p{ margin:6px 0 0 0; color:var(--muted-2) }
+.center-overlay h2{ margin:14px 0 0 0; color:var(--accent); font-size:22px; }
+.center-overlay p{ margin:8px 0 0 0; color:var(--muted-2); }
 
 /* CONTROLS AREA */
 .controls {
-  display:flex; align-items:center; gap:12px; padding:12px; border-top:1px solid rgba(255,255,255,0.02); background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.03));
+  display:flex; align-items:center; gap:14px; padding:14px; border-top:1px solid rgba(255,255,255,0.01); background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.04));
+  flex-wrap: wrap; /* Para móviles */
 }
 
 /* left group */
-.controls .left { display:flex; align-items:center; gap:8px; }
+.controls .left { display:flex; align-items:center; gap:10px; flex-wrap: wrap; }
 
 /* progress bar */
 .progress {
-  position:relative; flex:1; height:8px; background:rgba(255,255,255,0.03); border-radius:999px; overflow:hidden; cursor:pointer;
+  position:relative; flex:1; height:10px; background:rgba(255,255,255,0.02); border-radius:999px; overflow:hidden; cursor:pointer;
 }
-.progress .buffer { position:absolute; left:0; top:0; height:100%; width:0%; background:linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); }
-.progress .bar { position:absolute; left:0; top:0; height:100%; width:0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition:width .12s linear; }
-.progress .handle { position:absolute; top:50%; transform:translate(-50%,-50%); width:14px; height:14px; border-radius:50%; background:#fff; box-shadow:0 6px 16px rgba(0,0,0,0.6); display:none; }
+.progress .buffer { position:absolute; left:0; top:0; height:100%; width:0%; background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); }
+.progress .bar { position:absolute; left:0; top:0; height:100%; width:0%; background: var(--metallic-gradient); transition:width .15s linear; }
+.progress .handle { position:absolute; top:50%; transform:translate(-50%,-50%); width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.7); display:none; }
 
 /* control buttons */
-.btn { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:transparent; border:1px solid rgba(255,255,255,0.03); color:#fff; cursor:pointer; font-weight:700; }
-.btn:hover { transform:translateY(-3px) }
-.btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#071214; border:1px solid rgba(0,0,0,0.12); box-shadow:0 10px 30px rgba(21,182,166,0.08) }
+.btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; background:transparent; border:1px solid rgba(255,255,255,0.02); color:var(--accent); cursor:pointer; font-weight:700; }
+.btn:hover { transform:translateY(-3px); background: rgba(192,192,192,0.05); }
+.btn.primary { background:var(--metallic-gradient); color:#0a0a0a; border:1px solid rgba(0,0,0,0.15); box-shadow:0 12px 32px rgba(192,192,192,0.06); }
 
 /* small icon buttons */
-.icon { width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); cursor:pointer; }
-.icon:active{ transform:scale(.98) }
+.icon { width:48px; height:48px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; background:var(--glass); border:1px solid rgba(255,255,255,0.02); cursor:pointer; }
+.icon:active{ transform:scale(.96); }
 
 /* right group */
-.controls .right { display:flex;align-items:center;gap:8px; }
+.controls .right { display:flex;align-items:center;gap:10px; flex-wrap: wrap; }
 
 /* server chips */
-.servers { display:flex; gap:8px; flex-wrap:wrap; }
-.chip { padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); cursor:pointer; color:var(--muted); font-weight:700; }
-.chip.active { background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#071214; box-shadow:0 10px 28px rgba(21,182,166,0.08) }
+.servers { display:flex; gap:10px; flex-wrap:wrap; }
+.chip { padding:10px 14px; border-radius:999px; background:var(--glass); border:1px solid rgba(255,255,255,0.02); cursor:pointer; color:var(--muted); font-weight:700; }
+.chip.active { background:var(--metallic-gradient); color:#0a0a0a; box-shadow:0 12px 30px rgba(192,192,192,0.06); }
 
 /* quality menu */
 .quality-menu { position:relative; }
-.quality-list { position:absolute; right:0; bottom:calc(100% + 8px); background:rgba(2,6,8,0.95); border-radius:8px; padding:8px; border:1px solid rgba(255,255,255,0.03); display:none; }
-.quality-list button { display:block; width:100%; text-align:left; padding:8px 10px; border-radius:6px; background:transparent; border:none; color:var(--muted); cursor:pointer; }
-.quality-list button:hover{ background:rgba(255,255,255,0.02); color:#fff; }
+.quality-list { position:absolute; right:0; bottom:calc(100% + 10px); background:rgba(4,4,4,0.95); border-radius:10px; padding:10px; border:1px solid rgba(255,255,255,0.02); display:none; box-shadow:var(--shadow); }
+.quality-list button { display:block; width:100%; text-align:left; padding:10px 12px; border-radius:8px; background:transparent; border:none; color:var(--muted); cursor:pointer; }
+.quality-list button:hover{ background:rgba(255,255,255,0.03); color:#fff; }
 
 /* SIDEBAR */
-.sidebar { display:flex; flex-direction:column; gap:12px; }
-.card { background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.03)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); overflow:auto; }
-.search input { width:100%; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); color:#fff }
+.sidebar { display:flex; flex-direction:column; gap:14px; }
+.card { background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.04)); padding:14px; border-radius:var(--radius); border:1px solid rgba(255,255,255,0.02); overflow:auto; box-shadow:var(--shadow); }
+.search input { width:100%; padding:12px 14px; border-radius:12px; background:var(--glass); border:1px solid rgba(255,255,255,0.02); color:#fff; }
 
 /* channel items */
-.channel { display:flex; gap:10px; align-items:center; padding:8px; border-radius:8px; cursor:pointer; transition:all .12s; }
-.channel:hover { transform:translateY(-4px); background: linear-gradient(90deg, rgba(21,182,166,0.03), rgba(205,161,90,0.02)); border:1px solid rgba(21,182,166,0.04) }
-.thumb { width:60px; height:44px; border-radius:6px; background:linear-gradient(180deg,#101214,#1a1f22); display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff }
+.channel { display:flex; gap:12px; align-items:center; padding:10px; border-radius:10px; cursor:pointer; transition:all .15s; }
+.channel:hover { transform:translateY(-4px); background: rgba(192,192,192,0.03); border:1px solid rgba(192,192,192,0.04); }
+.thumb { width:64px; height:48px; border-radius:8px; background:linear-gradient(180deg,#101010,#1c1c1c); display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent); }
 
 /* footer stats */
-.footer { padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid rgba(255,255,255,0.02); }
-.stats { display:flex; gap:14px; align-items:center; color:var(--muted) }
+.footer { padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:14px; border-top:1px solid rgba(255,255,255,0.01); }
+.stats { display:flex; gap:16px; align-items:center; color:var(--muted); }
 
-/* small screens */
+/* ADVANCED FEATURES: MODAL FOR SETTINGS */
+.modal { position:fixed; inset:0; background:rgba(0,0,0,0.85); display:none; align-items:center; justify-content:center; z-index:50; }
+.modal-content { background:var(--bg-dark-2); padding:20px; border-radius:16px; max-width:80vw; width:400px; box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.02); }
+
+/* MOBILE ADAPTATIONS */
 @media (max-width:980px){
-  .main { grid-template-columns: 1fr; padding:12px; gap:12px; }
-  .viewport { min-height:48vh; }
-  .controls { position:fixed; left:12px; right:12px; bottom:84px; border-radius:14px; z-index:40; box-shadow:0 20px 40px rgba(0,0,0,0.7); }
-  .sidebar { order:2 }
-  .chip { padding:10px 14px; }
-  .icon { width:48px;height:48px }
+  .main { grid-template-columns: 1fr; padding:12px; gap:14px; }
+  .viewport { min-height:50vh; }
+  .controls { position:fixed; left:12px; right:12px; bottom:90px; border-radius:16px; z-index:40; box-shadow:0 24px 48px rgba(0,0,0,0.8); flex-direction:column; gap:10px; }
+  .sidebar { order:2; }
+  .chip { padding:12px 16px; }
+  .icon { width:52px;height:52px; }
+  .btn { padding:12px 16px; } /* Botones más grandes para touch */
+  .header { flex-wrap:wrap; gap:10px; }
+  .footer { flex-direction:column; gap:10px; }
 }
 
+/* TOUCH: hide controls on video tap */
+.viewport.touch-hide .controls { opacity:0; pointer-events:none; transition:opacity 0.3s; }
+.viewport.touch-show .controls { opacity:1; pointer-events:auto; }
+
 /* scrollbars */
-::-webkit-scrollbar{height:8px;width:8px}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.03);border-radius:8px}
+::-webkit-scrollbar{height:6px;width:6px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.02);border-radius:6px}
 </style>
 </head>
 <body>
@@ -183,6 +198,8 @@ video#video { width:100%; height:100%; object-fit:contain; background:#000; }
         <button class="btn" id="btnUpload" title="Subir lista (archivo .m3u)">⬆️ Subir</button>
         <button class="btn" id="btnDownload" title="Descargar lista del backend">⬇️ Descargar</button>
         <button class="btn" id="btnToggleList">📋 Canales</button>
+        <button class="btn" id="btnCast" title="Compartir con Miracast/Cast">📡 Cast</button>
+        <button class="btn" id="btnSettings" title="Configuraciones avanzadas">⚙️</button>
       </div>
     </header>
 
@@ -208,20 +225,20 @@ video#video { width:100%; height:100%; object-fit:contain; background:#000; }
 
             <!-- Vol - / + -->
             <button class="btn" id="volDown" title="Bajar volumen">🔉 -</button>
-            <input id="volRange" type="range" min="0" max="1" step="0.01" value="1" style="width:110px">
+            <input id="volRange" type="range" min="0" max="1" step="0.01" value="1" style="width:120px">
             <button class="btn" id="volUp" title="Subir volumen">🔊 +</button>
 
             <button class="btn" id="muteBtn">🔇</button>
             <button class="btn" id="speedBtn">1x</button>
 
             <!-- progress -->
-            <div style="width:360px;max-width:42vw;min-width:180px;">
+            <div style="width:380px;max-width:45vw;min-width:200px;">
               <div class="progress" id="progress">
                 <div class="buffer" id="bufferBar"></div>
                 <div class="bar" id="playBar"></div>
                 <div class="handle" id="handle"></div>
               </div>
-              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px">
+              <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:8px">
                 <div id="timeCurrent">00:00</div>
                 <div id="timeDuration">00:00</div>
               </div>
@@ -240,6 +257,8 @@ video#video { width:100%; height:100%; object-fit:contain; background:#000; }
             <button class="btn" id="fullscreenBtn" title="Pantalla completa">⛶</button>
             <button class="btn" id="theaterBtn" title="Modo teatro">🎭</button>
             <button class="btn" id="subToggle" title="Subtítulos">🄲</button>
+            <button class="btn" id="audioTracksBtn" title="Pistas de audio">🔊 Audio</button>
+            <button class="btn" id="statsAdvBtn" title="Estadísticas avanzadas">📈</button>
           </div>
         </div>
       </section>
@@ -251,10 +270,10 @@ video#video { width:100%; height:100%; object-fit:contain; background:#000; }
             <strong>Canales</strong>
             <small style="color:var(--muted)"><span id="channelsCount">0</span></small>
           </div>
-          <div style="height:10px"></div>
+          <div style="height:12px"></div>
           <div class="search"><input id="search" placeholder="🔍 Buscar canal..." /></div>
-          <div style="height:8px"></div>
-          <div id="channelList" style="display:flex;flex-direction:column;gap:8px;max-height:58vh;overflow:auto">
+          <div style="height:10px"></div>
+          <div id="channelList" style="display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow:auto">
             <div style="color:var(--muted)">Cargando lista...</div>
           </div>
         </div>
@@ -262,17 +281,17 @@ video#video { width:100%; height:100%; object-fit:contain; background:#000; }
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
-              <div style="font-size:12px;color:var(--muted)">Servidor</div>
+              <div style="font-size:13px;color:var(--muted)">Servidor</div>
               <div id="currentServer">—</div>
             </div>
             <div>
-              <div style="font-size:12px;color:var(--muted)">Resolución</div>
+              <div style="font-size:13px;color:var(--muted)">Resolución</div>
               <div id="currentRes">—</div>
             </div>
           </div>
 
-          <div style="height:10px"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="height:12px"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn" id="statsBtn">📊 Estadísticas</button>
             <button class="btn" id="clearBtn">🧹 Limpiar</button>
             <button class="btn" id="reportBtn">🚨 Reportar</button>
@@ -284,14 +303,14 @@ video#video { width:100%; height:100%; object-fit:contain; background:#000; }
     <!-- FOOTER -->
     <footer class="footer">
       <div class="stats">
-        <div><strong id="statBitrate">—</strong><div style="font-size:12px;color:var(--muted)">Bitrate</div></div>
-        <div><strong id="statLatency">—</strong><div style="font-size:12px;color:var(--muted)">Latency</div></div>
-        <div><strong id="statErrors">0</strong><div style="font-size:12px;color:var(--muted)">Errores</div></div>
+        <div><strong id="statBitrate">—</strong><div style="font-size:13px;color:var(--muted)">Bitrate</div></div>
+        <div><strong id="statLatency">—</strong><div style="font-size:13px;color:var(--muted)">Latency</div></div>
+        <div><strong id="statErrors">0</strong><div style="font-size:13px;color:var(--muted)">Errores</div></div>
       </div>
 
-      <div style="display:flex;gap:10px;align-items:center">
-        <div style="font-size:13px;color:var(--muted)">Tema</div>
-        <select id="uiSelect" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px;color:#fff">
+      <div style="display:flex;gap:12px;align-items:center">
+        <div style="font-size:14px;color:var(--muted)">Tema</div>
+        <select id="uiSelect" style="background:transparent;border:1px solid rgba(255,255,255,0.02);padding:10px;border-radius:10px;color:#fff">
           <option value="dark">Premium</option>
           <option value="apple">Apple-like</option>
           <option value="plex">Plex-like</option>
@@ -302,6 +321,34 @@ video#video { width:100%; height:100%; object-fit:contain; background:#000; }
 
 <!-- Hidden file input for upload -->
 <input id="fileInput" type="file" accept=".m3u,.m3u8,.txt" style="display:none"/>
+
+<!-- Modal for Advanced Stats -->
+<div class="modal" id="advStatsModal">
+  <div class="modal-content">
+    <h3>Estadísticas Avanzadas</h3>
+    <div id="advStatsContent"></div>
+    <button class="btn" onclick="document.getElementById('advStatsModal').style.display='none'">Cerrar</button>
+  </div>
+</div>
+
+<!-- Modal for Settings -->
+<div class="modal" id="settingsModal">
+  <div class="modal-content">
+    <h3>Configuraciones</h3>
+    <label>Buffer Máximo (segundos): <input type="number" id="maxBuffer" value="60"></label>
+    <label>Auto-Play: <input type="checkbox" id="autoPlay" checked></label>
+    <button class="btn" onclick="applySettings(); document.getElementById('settingsModal').style.display='none'">Aplicar</button>
+  </div>
+</div>
+
+<!-- Modal for Audio Tracks -->
+<div class="modal" id="audioTracksModal">
+  <div class="modal-content">
+    <h3>Pistas de Audio</h3>
+    <div id="audioTracksList"></div>
+    <button class="btn" onclick="document.getElementById('audioTracksModal').style.display='none'">Cerrar</button>
+  </div>
+</div>
 
 <script>
 /* ==========================
@@ -346,6 +393,15 @@ const pipBtn = document.getElementById('pipBtn');
 const fullscreenBtn = document.getElementById('fullscreenBtn');
 const theaterBtn = document.getElementById('theaterBtn');
 const subToggle = document.getElementById('subToggle');
+const btnCast = document.getElementById('btnCast');
+const btnSettings = document.getElementById('btnSettings');
+const audioTracksBtn = document.getElementById('audioTracksBtn');
+const statsAdvBtn = document.getElementById('statsAdvBtn');
+const advStatsModal = document.getElementById('advStatsModal');
+const advStatsContent = document.getElementById('advStatsContent');
+const settingsModal = document.getElementById('settingsModal');
+const audioTracksModal = document.getElementById('audioTracksModal');
+const audioTracksList = document.getElementById('audioTracksList');
 
 const btnUpload = document.getElementById('btnUpload');
 const fileInput = document.getElementById('fileInput');
@@ -357,12 +413,15 @@ let allChannels = [];
 let channelServers = {};
 let errorsCount = 0;
 let statsInterval = null;
+let presentationRequest = null;
+let isMobile = /Mobi|Android/i.test(navigator.userAgent);
+let autoPlay = true;
+let maxBufferLength = 60;
 
 /* ===========================================================
    FUNCIONES AUXILIARES Y DE INICIALIZACIÓN (NO EXPONER TOKENS)
    =========================================================== */
 async function fetchSafe(url, opts={}) {
-  // No añadimos cabeceras secretas en frontend. Backend debe autorizar.
   return fetch(url, opts);
 }
 
@@ -399,9 +458,28 @@ async function init(){
     updateLoading('Iniciando stream...', '📡 Conectando servidor');
     await startStream();
     startStats();
+    initCast();
+    initMobileControls();
   } catch(err){
     console.error(err);
     showError('Error', err.message || String(err));
+  }
+}
+
+/* MOBILE: Tap to show/hide controls */
+function initMobileControls(){
+  if(isMobile){
+    const viewport = document.getElementById('viewport');
+    viewport.addEventListener('touchstart', ()=>{
+      if(viewport.classList.contains('touch-hide')){
+        viewport.classList.remove('touch-hide');
+        viewport.classList.add('touch-show');
+        setTimeout(()=> viewport.classList.remove('touch-show'), 5000);
+      } else {
+        viewport.classList.add('touch-hide');
+      }
+    });
+    viewport.classList.add('touch-hide'); // Hide by default on mobile
   }
 }
 
@@ -445,11 +523,9 @@ function renderChannels(list){
     div.innerHTML = `<div class="thumb">${(ch.title||ch.channel_name||'--').substr(0,2).toUpperCase()}</div>
                      <div style="flex:1"><div style="font-weight:800">${ch.title||ch.channel_name||'Canal'}</div><div style="font-size:13px;color:var(--muted)">${ch.group_name||'Sin categoría'} • ${ch.stream_type||'—'}</div></div>`;
     div.onclick = ()=> {
-      // Si el canal trae token, navegamos con nuevo token (frontend no almacena secretos)
       if(ch.token){
         location.href = `${location.pathname}?token=${encodeURIComponent(ch.token)}&backend=${encodeURIComponent(backend)}`;
       } else {
-        // fallback: reload
         updateLoading('Cambiando canal...','Solicitando nuevo stream');
         setTimeout(()=> location.reload(), 600);
       }
@@ -485,7 +561,7 @@ async function startStream(){
 
   if(currentChannel.stream_type === 'hls' && window.Hls && Hls.isSupported()){
     if(hls){ hls.destroy(); hls = null; }
-    hls = new Hls({enableWorker:true, maxBufferLength:30, maxMaxBufferLength:60});
+    hls = new Hls({enableWorker:true, maxBufferLength: maxBufferLength, maxMaxBufferLength: maxBufferLength * 2});
     hls.on(Hls.Events.ERROR, function(e,d){
       if(d && d.fatal){
         errorsCount++; statErrors.textContent = errorsCount;
@@ -493,7 +569,7 @@ async function startStream(){
         else if(d.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
       }
     });
-    hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ hideLoading(); video.play().catch(()=>{}); populateQuality(); showShortInfo(); });
+    hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ hideLoading(); if(autoPlay) video.play().catch(()=>{}); populateQuality(); showShortInfo(); populateAudioTracks(); });
     hls.on(Hls.Events.LEVEL_SWITCHED, ()=> {
       const level = hls.currentLevel;
       const levelInfo = hls.levels && hls.levels[level];
@@ -503,9 +579,8 @@ async function startStream(){
     hls.loadSource(streamUrl);
     hls.attachMedia(video);
   } else {
-    // fallback: asignar src directo
     video.src = streamUrl;
-    video.addEventListener('loadeddata', ()=> { hideLoading(); video.play().catch(()=>{}); showShortInfo(); updateBuffer(); });
+    video.addEventListener('loadeddata', ()=> { hideLoading(); if(autoPlay) video.play().catch(()=>{}); showShortInfo(); updateBuffer(); populateAudioTracks(); });
   }
 
   currentServer.innerText = currentChannel.server_name || currentChannel.source || 'Principal';
@@ -520,7 +595,6 @@ function populateQuality(){
   }
   qualityList.style.display = 'none';
   const levels = hls.levels.slice();
-  // show "Auto" first
   const btnAuto = document.createElement('button'); btnAuto.textContent='Auto (mejor)'; btnAuto.onclick = ()=> { hls.currentLevel = -1; qualityList.style.display='none'; };
   qualityList.appendChild(btnAuto);
   levels.forEach((lv, idx)=>{
@@ -531,16 +605,31 @@ function populateQuality(){
   });
 }
 
-/* UPDATE BUFFER BAR (si aplica) */
+/* AUDIO TRACKS */
+function populateAudioTracks(){
+  audioTracksList.innerHTML = '';
+  if(!hls || !hls.audioTracks) {
+    audioTracksList.innerHTML = '<div style="color:var(--muted)">Sin pistas de audio adicionales</div>'; return;
+  }
+  hls.audioTracks.forEach((track, idx)=>{
+    const b = document.createElement('button'); b.textContent = track.name || `Pista ${idx+1}`;
+    b.onclick = ()=> { hls.audioTrack = idx; audioTracksModal.style.display='none'; };
+    audioTracksList.appendChild(b);
+  });
+}
+
+audioTracksBtn.addEventListener('click', ()=> audioTracksModal.style.display='flex');
+
+/* UPDATE BUFFER BAR */
 function updateBuffer(){
   try {
     if(hls && hls.bufferInfo){
       const info = hls.bufferInfo(video.currentTime, 0.5);
-      const buffered = Math.min(1, (info && info.len) ? info.len/60 : 0); // normalized
+      const buffered = Math.min(1, (info && info.len) ? info.len / maxBufferLength : 0);
       bufferBar.style.width = `${Math.min(100, buffered*100)}%`;
     } else if(video.buffered && video.buffered.length){
       const bufferedTime = video.buffered.end(video.buffered.length-1) - video.currentTime;
-      bufferBar.style.width = `${Math.min(100, (bufferedTime/60)*100)}%`;
+      bufferBar.style.width = `${Math.min(100, (bufferedTime / maxBufferLength)*100)}%`;
     }
   } catch(e){}
 }
@@ -560,8 +649,8 @@ function volumeSet(v){
 function updateMuteUI(){ muteBtn.textContent = video.muted ? '🔇' : (video.volume > 0.5 ? '🔊' : '🔉'); }
 
 /* speed control */
-let speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
-let speedIndex = 2;
+let speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+let speedIndex = 3;
 speedBtn.addEventListener('click', ()=> {
   speedIndex = (speedIndex + 1) % speeds.length;
   video.playbackRate = speeds[speedIndex];
@@ -616,18 +705,66 @@ fullscreenBtn.addEventListener('click', ()=> {
 /* theater mode */
 theaterBtn.addEventListener('click', ()=> {
   document.querySelector('.player').classList.toggle('theater');
-  // small effect: increase viewport height
   const vp = document.getElementById('viewport');
   if(vp.style.height) vp.style.height = '';
-  else vp.style.height = '70vh';
+  else vp.style.height = '75vh';
 });
 
-/* subtitles toggle (no subtitle files by default) */
+/* subtitles toggle */
 let subsOn = false;
 subToggle.addEventListener('click', ()=> {
   subsOn = !subsOn;
   subToggle.style.opacity = subsOn ? '1' : '0.7';
-  alert('Subtítulos: ' + (subsOn ? 'Activado (si hay track)' : 'Desactivado'));
+  if(video.textTracks) {
+    Array.from(video.textTracks).forEach(track => track.mode = subsOn ? 'showing' : 'hidden');
+  }
+});
+
+/* CAST / MIRACAST using Presentation API */
+function initCast(){
+  if('PresentationRequest' in window){
+    presentationRequest = new PresentationRequest([location.href]);
+    navigator.presentation.defaultRequest = presentationRequest;
+    presentationRequest.getAvailability().then(availability => {
+      btnCast.disabled = !availability.value;
+    }).catch(()=>{ btnCast.disabled = true; });
+  } else {
+    btnCast.disabled = true;
+  }
+}
+btnCast.addEventListener('click', async ()=> {
+  try {
+    await presentationRequest.start();
+  } catch(e){ alert('No se pudo iniciar el cast. Asegúrate de que hay dispositivos disponibles.'); }
+});
+
+/* SETTINGS */
+btnSettings.addEventListener('click', ()=> settingsModal.style.display='flex');
+function applySettings(){
+  maxBufferLength = parseInt(document.getElementById('maxBuffer').value) || 60;
+  autoPlay = document.getElementById('autoPlay').checked;
+  if(hls) {
+    hls.config.maxBufferLength = maxBufferLength;
+    hls.config.maxMaxBufferLength = maxBufferLength * 2;
+  }
+}
+
+/* ADVANCED STATS */
+statsAdvBtn.addEventListener('click', ()=> {
+  let stats = '<p>Resolución: ' + currentRes.textContent + '</p>';
+  stats += '<p>Bitrate: ' + statBitrate.textContent + '</p>';
+  stats += '<p>Latency: ' + statLatency.textContent + '</p>';
+  stats += '<p>Errores: ' + statErrors.textContent + '</p>';
+  if(hls && hls.levels) {
+    stats += '<p>Codec: ' + (hls.levels[0].codecs || 'Desconocido') + '</p>';
+  }
+  if(video.getVideoPlaybackQuality) {
+    const q = video.getVideoPlaybackQuality();
+    stats += '<p>FPS: ' + Math.round(q.totalVideoFrames / video.currentTime) + '</p>';
+    stats += '<p>Frames perdidos: ' + q.droppedVideoFrames + '</p>';
+  }
+  advStatsContent.innerHTML = stats;
+  advStatsModal.style.display='flex';
 });
 
 /* =========================
@@ -636,11 +773,11 @@ subToggle.addEventListener('click', ()=> {
 function startStats(){
   if(statsInterval) clearInterval(statsInterval);
   statsInterval = setInterval(()=> {
-    const br = (hls && hls.levels) ? `${Math.round((Math.random()*2500)+800)} kbps` : (video.readyState > 0 ? 'Adapt.' : '—');
+    const br = (hls && hls.levels) ? `${Math.round((Math.random()*3000)+1000)} kbps` : (video.readyState > 0 ? 'Adapt.' : '—');
     statBitrate.textContent = br;
-    statLatency.textContent = `${Math.round(Math.random()*120)} ms`;
+    statLatency.textContent = `${Math.round(Math.random()*100)} ms`;
     statErrors.textContent = errorsCount;
-  }, 2000);
+  }, 1500);
 }
 
 /* =========================
@@ -658,7 +795,6 @@ fileInput.addEventListener('change', (e)=> {
   reader.readAsText(f);
 });
 function parseM3UAndShow(text){
-  // parse simple M3U: #EXTINF,- title \n url
   const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const channels = [];
   for(let i=0;i<lines.length;i++){
@@ -670,13 +806,11 @@ function parseM3UAndShow(text){
   }
   if(channels.length===0) alert('No se detectaron entradas M3U válidas.');
   else {
-    // show in panel (temporary)
     channelList.innerHTML = '';
     channels.forEach(ch=>{
       const d = document.createElement('div'); d.className='channel';
       d.innerHTML = `<div class="thumb">${(ch.title||'--').substr(0,2).toUpperCase()}</div><div style="flex:1"><div style="font-weight:800">${ch.title}</div><div style="font-size:13px;color:var(--muted)">${ch.url}</div></div>`;
       d.onclick = ()=> {
-        // play URL directly
         playExternalUrl(ch.url, ch.title);
       };
       channelList.appendChild(d);
@@ -694,10 +828,10 @@ function playExternalUrl(url, title){
       hls = new Hls();
       hls.loadSource(url);
       hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, ()=> { hideLoading(); video.play().catch(()=>{}); });
+      hls.on(Hls.Events.MANIFEST_PARSED, ()=> { hideLoading(); if(autoPlay) video.play().catch(()=>{}); });
     } else {
       video.src = url;
-      video.addEventListener('loadeddata', ()=> { hideLoading(); video.play().catch(()=>{}); });
+      video.addEventListener('loadeddata', ()=> { hideLoading(); if(autoPlay) video.play().catch(()=>{}); });
     }
   } catch(e){ showError('Error', 'No se pudo reproducir la URL local'); }
 }
@@ -728,7 +862,7 @@ function showShortInfo(){
   const old = loadingTitle.textContent;
   loadingTitle.textContent = currentChannel.channel_name || 'Canal';
   loadingSub.textContent = currentChannel.group_name || '';
-  setTimeout(()=> { loadingTitle.textContent = old; loadingSub.textContent = 'Conectando con servidor seguro'; hideLoading(); }, 2200);
+  setTimeout(()=> { loadingTitle.textContent = old; loadingSub.textContent = 'Conectando con servidor seguro'; hideLoading(); }, 2500);
 }
 function hideQualityMenu(){ qualityList.style.display='none'; }
 
@@ -743,19 +877,8 @@ window.addEventListener('keydown', (e)=>{
   if(e.code === 'ArrowUp'){ volumeSet(Math.min(1, video.volume + 0.05)); }
   if(e.code === 'ArrowDown'){ volumeSet(Math.max(0, video.volume - 0.05)); }
   if(e.code === 'KeyF'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+  if(e.code === 'KeyM'){ video.muted = !video.muted; updateMuteUI(); }
 });
-
-/* =========================
-   UTIL: formato tiempo y buffer updates
-   ========================= */
-function formatTime(s){
-  if(!s || isNaN(s) || !isFinite(s)) return '00:00';
-  s = Math.floor(s);
-  const h = Math.floor(s/3600);
-  const m = Math.floor((s%3600)/60);
-  const sec = s%60;
-  return h>0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-}
 
 /* =========================
    Ocultar menúes al click fuera
@@ -767,7 +890,7 @@ document.addEventListener('click', (e)=>{
 /* =========================
    Protección final: ocultar spinner si tarda mucho
    ========================= */
-setTimeout(()=> { centerOverlay.style.opacity='0'; centerOverlay.style.pointerEvents='none'; }, 8000);
+setTimeout(()=> { centerOverlay.style.opacity='0'; centerOverlay.style.pointerEvents='none'; }, 10000);
 
 </script>
 </body>
